@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+var fs = require('io/sync');
+var path = require('path');
+
+var scriptName = process.argv.splice(2, 1)[0];
+if (typeof scriptName !== 'string') {
+  console.warn('Must provide a script name!');
+  process.exit(0);
+}
+
+var scriptPath = path.resolve(__dirname, '..', 'js', scriptName + '.js');
+if (!fs.exists(scriptPath)) {
+  console.warn('Script does not exist: ' + scriptPath);
+} else {
+  require(scriptPath);
+}
