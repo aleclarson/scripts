@@ -32,7 +32,6 @@ readDeps = (modulePath, fromModuleName) ->
 
     deps[moduleName] =
       path: modulePath
-      version: pkgJson.version
       dependers: new Set [fromModuleName]
 
   if pkgJson and isType pkgJson.dependencies, Object

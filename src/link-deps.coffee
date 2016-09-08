@@ -3,6 +3,7 @@ fs = require "io/sync"
 exec = require "exec"
 path = require "path"
 sync = require "sync"
+minimist = require "minimist"
 
 GLOBAL_NODE_MODULES = path.join process.env.HOME, "lib/node_modules"
 
@@ -16,8 +17,20 @@ manifest = require manifestPath
 
 manifest[moduleName] =
   path: path.join process.cwd(), moduleName
-  version: "aleclarson/"
   dependers: []
+
+args = minimist process.argv.slice 2
+
+if args.refresh
+  sync.each manifest, (moduleJson) ->
+    return if moduleJson.remote
+    moduleDeps = path.join moduleJson.path, "node_modules"
+    console.log "\nRefreshing:\n#{moduleDeps}\n"
+    fs.match moduleDeps + "/*"
+      .forEach (filePath) ->
+        if fs.isLink filePath
+          fs.remove filePath
+        return
 
 timeStart = Date.now()
 sync.each manifest, (moduleJson, moduleName) ->
@@ -26,7 +39,6 @@ sync.each manifest, (moduleJson, moduleName) ->
   sync.each moduleJson.dependers, (depender) ->
     depJson = manifest[depender]
     return if depJson.remote
-    return unless depJson.version.startsWith "aleclarson/"
 
     installedPath = path.join depJson.path, "node_modules", moduleName
     return if fs.exists installedPath
