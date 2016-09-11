@@ -19,7 +19,7 @@ sync.each manifest, (moduleJson, moduleName) ->
     depPath = path.join process.cwd(), depender
     installedPath = path.join depPath, "node_modules", moduleName
     if not fs.exists installedPath
-      console.log "\nInstalling:\n#{moduleName}\n  -> #{depPath}/node_modules\n"
+      console.log "\nInstalling:\n#{moduleName}\n  -> #{depPath}/node_modules/#{moduleName}\n"
       try exec.sync "npm install #{moduleName}", cwd: depPath
       catch error
          throw error unless /WARN/.test error.message

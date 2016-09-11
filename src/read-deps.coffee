@@ -7,6 +7,9 @@ isType = require "isType"
 
 GLOBAL_NODE_MODULES = path.join process.env.HOME, "lib/node_modules"
 
+# Protect against miscapitalized module names.
+lowercased = Object.create null
+
 deps = Object.create null
 readDeps = (modulePath, fromModuleName) ->
 
@@ -14,6 +17,19 @@ readDeps = (modulePath, fromModuleName) ->
   if moduleJson = deps[moduleName]
     fromModuleName and moduleJson.dependers.add fromModuleName
     return
+
+  moduleHash = moduleName.toLowerCase()
+  collision = lowercased[moduleHash]
+  if collision and collision.to isnt moduleName
+    console.warn "" +
+      "Possibly incorrect capitalization:\n" +
+      "  {from: #{fromModuleName}, to: #{moduleName}}" +
+      "\n\n" +
+      "This module is also required with a similar name:\n" +
+      "  {from: #{collision.from}, to: #{collision.to}}"
+    return
+
+  lowercased[moduleHash] = {from: fromModuleName, to: moduleName}
 
   pkgJson = modulePath + "/package.json"
   if not fs.isFile pkgJson

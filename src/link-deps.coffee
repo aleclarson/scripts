@@ -5,8 +5,6 @@ path = require "path"
 sync = require "sync"
 minimist = require "minimist"
 
-GLOBAL_NODE_MODULES = path.join process.env.HOME, "lib/node_modules"
-
 moduleName = process.argv[2]
 manifestPath = path.join process.cwd(), moduleName, "manifest.json"
 if not fs.exists manifestPath
@@ -34,7 +32,8 @@ if args.refresh
 
 timeStart = Date.now()
 sync.each manifest, (moduleJson, moduleName) ->
-  globalPath = path.join GLOBAL_NODE_MODULES, moduleName
+  globalPath = path.join process.env.HOME, "lib/node_modules", moduleName
+  return if not fs.exists globalPath
 
   sync.each moduleJson.dependers, (depender) ->
     depJson = manifest[depender]

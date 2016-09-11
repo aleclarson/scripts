@@ -1,8 +1,8 @@
 
-## scripts v0.0.2
+## scripts v0.0.3
 
 ```sh
-npm i -g aleclarson/scripts#1.0.0
+npm i -g aleclarson/scripts#0.0.3
 
 # Overwrites 'manifest.json' in the package's root directory.
 scripts read-deps path/to/package
