@@ -1,18 +1,17 @@
 
-## scripts v0.0.3
+## scripts v1.0.0
 
 ```sh
-npm i -g aleclarson/scripts#0.0.3
+# Add your custom scripts to the 'src' directory.
+# Make sure they export a function!
+# The command line args are passed to it.
+git clone https://github.com/aleclarson/scripts.git
 
-# Overwrites 'manifest.json' in the package's root directory.
-scripts read-deps path/to/package
+# Install dependencies.
+npm install
 
-# Reads the 'manifest.json' of the package and
-# creates symbolic links for any local dependencies.
-# Specify --refresh to clear old dependencies.
-scripts link-deps path/to/package
-
-# Reads the 'manifest.json' of the package and
-# uses NPM to install any remote dependencies.
-scripts install-deps path/to/package
+# Install bin scripts to $(npm bin -g).
+# NOTE: This also globally installs this module; using the
+#       `__dirname` instead of the package.json "name" field.
+sudo node postinstall.js
 ```

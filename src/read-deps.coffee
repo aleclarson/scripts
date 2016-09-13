@@ -3,12 +3,36 @@ fs = require "io/sync"
 exec = require "exec"
 path = require "path"
 sync = require "sync"
-isType = require "isType"
 
-GLOBAL_NODE_MODULES = path.join process.env.HOME, "lib/node_modules"
+module.exports = (args) ->
+
+  readDeps entryPath = path.join process.cwd(), args._[0]
+
+  log.moat 1
+  log.white "Found #{Object.keys(deps).length} dependencies!"
+  log.moat 1
+
+  # Convert sets to arrays (for JSON.stringify)
+  sync.each deps, (moduleJson, moduleName) ->
+    moduleJson.dependers = Array.from moduleJson.dependers
+    return
+
+  manifest = JSON.stringify deps, null, 2
+  fs.write entryPath + "/manifest.json", manifest
+
+#
+# Helpers
+#
+
+npmRoot = exec.sync "npm root -g"
 
 # Protect against miscapitalized module names.
 lowercased = Object.create null
+
+shouldLink = (linkPath) ->
+  if fs.isLink linkPath
+  then fs.isLinkBroken linkPath
+  else yes
 
 deps = Object.create null
 readDeps = (modulePath, fromModuleName) ->
@@ -21,12 +45,13 @@ readDeps = (modulePath, fromModuleName) ->
   moduleHash = moduleName.toLowerCase()
   collision = lowercased[moduleHash]
   if collision and collision.to isnt moduleName
-    console.warn "" +
-      "Possibly incorrect capitalization:\n" +
-      "  {from: #{fromModuleName}, to: #{moduleName}}" +
-      "\n\n" +
-      "This module is also required with a similar name:\n" +
-      "  {from: #{collision.from}, to: #{collision.to}}"
+    log.warn """
+      Possibly incorrect capitalization:
+        {from: #{fromModuleName}, to: #{moduleName}}
+
+      This module is also required with a similar name:
+        {from: #{collision.from}, to: #{collision.to}}
+    """
     return
 
   lowercased[moduleHash] = {from: fromModuleName, to: moduleName}
@@ -41,31 +66,24 @@ readDeps = (modulePath, fromModuleName) ->
   pkgJson = require pkgJson
   if fromModuleName
 
-    globalPath = path.join GLOBAL_NODE_MODULES, moduleName
-    if not fs.exists globalPath
-      console.log "\nLinking:\n#{globalPath}\n  -> #{modulePath}\n"
-      exec.sync "sudo ln -s #{modulePath} #{globalPath}"
+    globalPath = path.join npmRoot, moduleName
+    if shouldLink globalPath
+      log.moat 1
+      log """
+        Linking:
+          #{globalPath}
+          -> #{modulePath}
+      """
+      log.moat 1
+      fs.writeLink globalPath, modulePath
 
     deps[moduleName] =
       path: modulePath
       dependers: new Set [fromModuleName]
 
-  if pkgJson and isType pkgJson.dependencies, Object
+  if pkgJson and pkgJson.dependencies
     sync.each pkgJson.dependencies, (version, name) ->
       depPath = path.join process.cwd(), name
       readDeps depPath, moduleName
       return
   return
-
-timeStart = Date.now()
-readDeps entryPath = path.join process.cwd(), process.argv[2]
-timeEnd = Date.now()
-console.log "\nFound #{Object.keys(deps).length} dependencies (in #{timeEnd - timeStart} ms)\n"
-
-# Convert sets to arrays (for JSON.stringify)
-sync.each deps, (moduleJson, moduleName) ->
-  moduleJson.dependers = Array.from moduleJson.dependers
-  return
-
-manifest = JSON.stringify deps, null, 2
-fs.write entryPath + "/manifest.json", manifest
