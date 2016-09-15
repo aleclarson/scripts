@@ -2,6 +2,13 @@
   "name": "scripts",
   "version": "1.1.0",
   "main": "js/index",
+  "plugins": [
+    "lotus-coffee"
+  ],
+  "scripts": {
+    "build": "coffee -cb -o js src",
+    "postinstall": "npm run build && node postinstall.js"
+  },
   "dependencies": {
     "LazyVar": "aleclarson/LazyVar#2.1.0",
     "Promise": "aleclarson/Promise#2.0.0",
@@ -10,19 +17,14 @@
     "io": "aleclarson/io#2.1.0",
     "log": "aleclarson/log#2.0.0",
     "minimist": "^1.2.0",
+    "postinstall-build": "0.2.x",
     "semver": "^5.3.0",
     "sync": "aleclarson/sync#1.0.0"
   },
-  "lotus": {
-    "plugins": [
-      "lotus-coffee"
-    ],
-    "implicitDependencies": [
-      "path"
-    ]
+  "devDependencies": {
+    "coffee-script": "1.9.x"
   },
-  "scripts": {
-    "build": "coffee -cb -o js src",
-    "postinstall": "npm run build && node postinstall.js"
-  }
+  "implicitDependencies": [
+    "path"
+  ]
 }
