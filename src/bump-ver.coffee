@@ -6,11 +6,11 @@ fs = require "io/sync"
 module.exports = (args) ->
 
   moduleName = args._[0]
-  if not moduleName
-    log.warn "Must provide a module name!"
-    return
+  modulePath =
+    if moduleName
+    then path.resolve moduleName
+    else process.cwd()
 
-  modulePath = path.resolve moduleName
   jsonPath = path.join modulePath, "package.json"
   json = require jsonPath
 
