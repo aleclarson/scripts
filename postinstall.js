@@ -33,7 +33,5 @@ fs.match('js/!(index).js').forEach(function(script) {
   log.moat(1);
   log.white('Created script at bin path:\n  ' + binPath);
   log.moat(1);
-  log.gray(binScript);
-  log.moat(1);
 });
 log.flush();
