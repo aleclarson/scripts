@@ -18,9 +18,11 @@ fs.match('js/!(index).js').forEach(function(script) {
   var ext = path.extname(script);
   var name = path.basename(script, ext);
   var binPath = path.join(npmBin, name);
+  if (fs.isFile(binPath)) {
+    return;
+  }
   var binScript = binTemplate.replace("{{script}}", name);
   try {
-    fs.isLink(binPath) && fs.remove(binPath);
     fs.write(binPath, binScript);
     fs.setMode(binPath, '755');
   } catch (error) {
@@ -32,8 +34,6 @@ fs.match('js/!(index).js').forEach(function(script) {
   }
   log.moat(1);
   log.white('Created script at bin path:\n  ' + binPath);
-  log.moat(1);
-  log.gray(binScript);
   log.moat(1);
 });
 log.flush();
