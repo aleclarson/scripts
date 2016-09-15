@@ -42,8 +42,8 @@ module.exports = (args) ->
 
   if args.c or args.coffee
     json.main ?= "js/index"
-    mergeDefaults json, require "../templates/coffee.package.json"
     json.plugins = ["lotus-coffee"]
+    mergeDefaults json, require "../templates/coffee.package.json"
     ignoredPaths.push "js/"
 
   stabilityLevel =

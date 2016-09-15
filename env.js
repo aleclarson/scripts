@@ -1,6 +1,6 @@
 
-inject = require("Property/inject");
-inject("LazyVar", require("LazyVar"));
+// This supports lazy properties.
+require("LazyVar");
 
 global.Promise = require("Promise");
 global.log = require("log");

@@ -6,20 +6,21 @@ fs = require "io/sync"
 module.exports = (args) ->
 
   moduleName = args._[0]
-  if not moduleName
-    log.warn "Must provide a module name!"
-    return
+  modulePath =
+    if moduleName
+    then path.resolve moduleName
+    else process.cwd()
 
-  modulePath = path.resolve moduleName
   jsonPath = path.join modulePath, "package.json"
   json = require jsonPath
 
-  version = semver.inc json.version,
-    if args.m or args.minor
-    then "minor"
-    else if args.p or args.patch
-    then "patch"
-    else "major"
+  version = args.v or
+    semver.inc json.version,
+      if args.m or args.minor
+      then "minor"
+      else if args.p or args.patch
+      then "patch"
+      else "major"
 
   log.moat 1
   log.gray json.version
@@ -32,5 +33,6 @@ module.exports = (args) ->
   fs.write readmePath, readme.replace "v#{json.version}", "v#{version}"
 
   json.version = version
-  fs.write jsonPath, JSON.stringify json, null, 2
+  json = JSON.stringify json, null, 2
+  fs.write jsonPath, json + log.ln
   return
