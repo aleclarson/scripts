@@ -14,21 +14,21 @@ module.exports = (args) ->
     log.warn "'install-deps' uses the manifest, please call 'read-deps' first!"
     return
 
-  manifest = require manifestPath
-  sync.each manifest, (moduleJson, moduleName) ->
-    return if not moduleJson.remote
-    sync.each moduleJson.dependers, (depender) ->
-      depPath = path.join process.cwd(), depender
-      installedPath = path.join depPath, "node_modules", moduleName
+  sync.each manifest, (depJson, depPath) ->
+    return if not path.isAbsolute depPath
+    depName = path.basename depPath
+    sync.each depJson.dependers, (parentPath) ->
+      return if not path.isAbsolute parentPath
+      installedPath = path.join parentPath, "node_modules", depName
       if not fs.exists installedPath
         log.moat 1
         log.white """
           Installing:
-            #{moduleName}
-            -> #{depPath}/node_modules/#{moduleName}
+            #{depName}
+            -> #{parentPath}/node_modules/#{depName}
         """
         log.moat 1
-        try exec.sync "npm install #{moduleName}", cwd: depPath
+        try exec.sync "npm install #{depName}", cwd: parentPath
         catch error
            throw error unless /WARN/.test error.message
       return

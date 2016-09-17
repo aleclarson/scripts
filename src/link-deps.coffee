@@ -19,14 +19,12 @@ module.exports = (args) ->
     log.warn "'link-deps' uses the manifest, please call 'read-deps' first!"
     return
 
-  manifest[moduleName] =
-    path: path.join process.cwd(), moduleName
-    dependers: []
+  manifest[modulePath] = dependers: []
 
   if args.refresh
-    sync.each manifest, (moduleJson) ->
-      return if moduleJson.remote
-      moduleDeps = path.join moduleJson.path, "node_modules"
+    sync.each manifest, (depJson, depPath) ->
+      return if not path.isAbsolute depPath
+      moduleDeps = path.join depPath, "node_modules"
 
       log.moat 1
       log.white """
@@ -42,21 +40,24 @@ module.exports = (args) ->
           return
 
   npmRoot = exec.sync "npm root -g"
-  sync.each manifest, (moduleJson, moduleName) ->
-    globalPath = path.join npmRoot, moduleName
+  sync.each manifest, (depJson, depPath) ->
+
+    return if not path.isAbsolute depPath
+    depName = path.basename depPath
+
+    globalPath = path.join npmRoot, depName
     return if not fs.exists globalPath
 
-    sync.each moduleJson.dependers, (depender) ->
-      depJson = manifest[depender]
-      return if depJson.remote
+    sync.each depJson.dependers, (parentPath) ->
+      return if not path.isAbsolute parentPath
 
-      installedPath = path.join depJson.path, "node_modules", moduleName
+      installedPath = path.join parentPath, "node_modules", depName
       if fs.exists installedPath
         return if not fs.isLink installedPath
         return if not fs.isLinkBroken installedPath
 
       # Ensure the 'node_modules' dir exists.
-      fs.writeDir depJson.path + "/node_modules"
+      fs.writeDir parentPath + "/node_modules"
 
       log.moat 1
       log.white """
