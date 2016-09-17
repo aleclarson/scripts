@@ -7,7 +7,12 @@ sync = require "sync"
 module.exports = (args) ->
   moduleName = args._[0] or path.basename process.cwd()
 
-  manifestPath = path.join process.cwd(), moduleName, "manifest.json"
+  modulePath =
+    if args._.length
+    then path.resolve args._[0]
+    else process.cwd()
+
+  manifestPath = path.join modulePath, "manifest.json"
   if fs.exists manifestPath
     manifest = require manifestPath
   else
@@ -15,20 +20,31 @@ module.exports = (args) ->
     return
 
   sync.each manifest, (depJson, depPath) ->
-    return if not path.isAbsolute depPath
-    depName = path.basename depPath
+    return if path.isAbsolute depPath
     sync.each depJson.dependers, (parentPath) ->
-      return if not path.isAbsolute parentPath
-      installedPath = path.join parentPath, "node_modules", depName
-      if not fs.exists installedPath
+      installedPath = path.join parentPath, "node_modules", depPath
+      if fs.exists installedPath
+        return if not args.refresh
+        return if fs.isLink installedPath
+        fs.remove installedPath
+        {yellow} = log.color
+        log.moat 1
+        log.white """
+          Reinstalling:
+            #{yellow installedPath}
+        """
+        log.moat 1
+
+      else
+        {green} = log.color
         log.moat 1
         log.white """
           Installing:
-            #{depName}
-            -> #{parentPath}/node_modules/#{depName}
+            #{green installedPath}
         """
         log.moat 1
-        try exec.sync "npm install #{depName}", cwd: parentPath
-        catch error
-           throw error unless /WARN/.test error.message
+
+      try exec.sync "npm install #{depPath}", cwd: parentPath
+      catch error
+         throw error unless /WARN/.test error.message
       return

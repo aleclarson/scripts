@@ -36,5 +36,6 @@ module.exports = (args) ->
   """
   log.moat 1
 
+  fs.writeDir path.dirname linkPath
   fs.writeLink linkPath, targetPath
   return

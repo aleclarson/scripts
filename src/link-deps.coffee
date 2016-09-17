@@ -6,11 +6,10 @@ sync = require "sync"
 
 module.exports = (args) ->
 
-  if moduleName = args._[0]
-    modulePath = path.join process.cwd(), moduleName
-  else
-    modulePath = process.cwd()
-    moduleName = path.basename modulePath
+  modulePath =
+    if args._.length
+    then path.resolve args._[0]
+    else process.cwd()
 
   manifestPath = path.join modulePath, "manifest.json"
   if fs.exists manifestPath
@@ -49,15 +48,10 @@ module.exports = (args) ->
     return if not fs.exists globalPath
 
     sync.each depJson.dependers, (parentPath) ->
-      return if not path.isAbsolute parentPath
-
       installedPath = path.join parentPath, "node_modules", depName
       if fs.exists installedPath
         return if not fs.isLink installedPath
         return if not fs.isLinkBroken installedPath
-
-      # Ensure the 'node_modules' dir exists.
-      fs.writeDir parentPath + "/node_modules"
 
       log.moat 1
       log.white """
@@ -67,5 +61,6 @@ module.exports = (args) ->
       """
       log.moat 1
 
+      fs.writeDir path.dirname installedPath
       fs.writeLink installedPath, globalPath
       return

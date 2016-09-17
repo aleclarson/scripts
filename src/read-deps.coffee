@@ -52,7 +52,7 @@ readDeps = (modulePath, options = {}) ->
     if moduleName isnt collision.dep
       log.warn """
         Possibly incorrect capitalization:
-          {from: #{options.parent}, to: #{moduleName}}
+          #{options.parent} -> #{moduleName}
 
         This module is also required with a similar name:
           #{collision.parent} -> #{collision.dep}
@@ -96,13 +96,13 @@ readDeps = (modulePath, options = {}) ->
 
       if dep = options.deps[depPath]
         dep.versions.add version
-        dep.dependers.add moduleName
+        dep.dependers.add modulePath
         return
 
       log.it gray depPath
       options.deps[depPath] =
         versions: new Set [version]
-        dependers: new Set [moduleName]
+        dependers: new Set [modulePath]
 
       if depth < options.depth
         options.parent = modulePath
@@ -112,13 +112,13 @@ readDeps = (modulePath, options = {}) ->
 
     if dep = options.deps[depName]
       dep.versions.add version
-      dep.dependers.add moduleName
+      dep.dependers.add modulePath
       return
 
     log.it gray depName
     options.deps[depName] =
       versions: new Set [version]
-      dependers: new Set [moduleName]
+      dependers: new Set [modulePath]
     return
 
   options._depth -= 1
