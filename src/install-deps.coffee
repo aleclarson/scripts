@@ -5,11 +5,13 @@ path = require "path"
 sync = require "sync"
 
 module.exports = (args) ->
+  moduleName = args._[0] or path.basename process.cwd()
 
-  moduleName = args._[0]
   manifestPath = path.join process.cwd(), moduleName, "manifest.json"
-  if not fs.exists manifestPath
-    log.warn "Must read dependencies first: 'scripts read-deps [package]'"
+  if fs.exists manifestPath
+    manifest = require manifestPath
+  else
+    log.warn "'install-deps' uses the manifest, please call 'read-deps' first!"
     return
 
   manifest = require manifestPath

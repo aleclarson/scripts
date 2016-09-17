@@ -6,7 +6,12 @@ sync = require "sync"
 
 module.exports = (args) ->
 
-  readDeps entryPath = path.join process.cwd(), args._[0]
+  entryPath =
+    if args._.length
+    then path.resolve args._[0]
+    else process.cwd()
+
+  readDeps entryPath
 
   log.moat 1
   log.white "Found #{Object.keys(deps).length} dependencies!"
