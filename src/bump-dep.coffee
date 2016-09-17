@@ -21,23 +21,27 @@ module.exports = (args) ->
 
   json = JSON.parse fs.read jsonPath
 
-  git.isClean modulePath
-  .then (isClean) ->
+  promise =
+    if args.commit is no
+    then Promise yes
+    else git.isClean modulePath
 
+  promise.then (isClean) ->
     if not isClean
       log.warn "Repository has uncommitted changes!"
       return
 
     deps = json.dependencies or {}
     oldValue = deps[depName]
-    if args.local is yes
-      userName = exec.sync "git config --get user.name"
-    else if oldValue
-      remote = args.remote is yes
-      if oldValue.indexOf("/") >= 0
+
+    if not isRemote = args.remote is yes
+      if args.ours is yes
+        userName = exec.sync "git config --get user.name"
+      else if oldValue and oldValue.indexOf("/") >= 0
         userName = oldValue.split("/")[0]
 
-    version = args.v or getLatestVersion depName, remote
+    version = args.v or
+      getLatestVersion depName, isRemote
 
     if not version
       log.warn """
