@@ -26,7 +26,6 @@ module.exports = (args) ->
       if fs.exists installedPath
         return if not args.refresh
         return if fs.isLink installedPath
-        fs.remove installedPath
         {yellow} = log.color
         log.moat 1
         log.white """
@@ -34,6 +33,8 @@ module.exports = (args) ->
             #{yellow installedPath}
         """
         log.moat 1
+        log.flush()
+        fs.remove installedPath
 
       else
         {green} = log.color
@@ -43,6 +44,7 @@ module.exports = (args) ->
             #{green installedPath}
         """
         log.moat 1
+        log.flush()
 
       try exec.sync "npm install #{depPath}", cwd: parentPath
       catch error
