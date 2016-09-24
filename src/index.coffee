@@ -32,18 +32,18 @@ module.exports = (script, args = []) ->
       ext = path.extname script
       return path.basename script, ext
 
+  index = scripts.indexOf script
+  if index < 0
+    return log.warn """
+      Unrecognized script name: '#{script}'
+
+      Valid scripts include:
+        #{scripts.join "\n  "}
+    """
+
   Promise.try ->
-    index = scripts.indexOf script
-    if index < 0
-      throw Error """
-        Unrecognized script name: '#{script}'
-
-        Valid scripts include:
-          #{scripts.join "\n  "}
-      """
-
     start = require "./" + script
-    start args
+    return start args
 
   .fail (error) ->
     log.moat 1
