@@ -71,8 +71,8 @@ module.exports = (args) ->
   log.it "Creating directory: '#{specPath}'"
 
   jsonPath = path.join modulePath, "package.json"
-  json = JSON.stringify json, null, 2
-  fs.write jsonPath, json + log.ln
+  jsonString = JSON.stringify json, null, 2
+  fs.write jsonPath, jsonString + log.ln
   log.it "Creating file: '#{jsonPath}'"
 
   ignorePath = path.join modulePath, ".gitignore"
