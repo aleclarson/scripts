@@ -15,6 +15,7 @@
     "exec": "aleclarson/exec#1.0.0",
     "git-utils": "aleclarson/git-utils#1.0.0",
     "io": "aleclarson/io#2.1.0",
+    "isType": "aleclarson/isType#1.0.0",
     "log": "aleclarson/log#2.0.0",
     "mergeDefaults": "aleclarson/mergeDefaults#1.0.0",
     "minimist": "^1.2.0",
