@@ -32,18 +32,18 @@ module.exports = (args) ->
       return
 
     deps = json.dependencies or {}
-    oldValue = deps[depName]
+    oldVersion = deps[depName]
 
     if not isRemote = args.remote is yes
       if args.ours is yes
         userName = exec.sync "git config --get user.name"
-      else if oldValue and oldValue.indexOf("/") >= 0
-        userName = oldValue.split("/")[0]
+      else if oldVersion and oldVersion.indexOf("/") >= 0
+        userName = oldVersion.split("/")[0]
 
-    version = args.v or
+    newVersion = args.v or
       getLatestVersion depName, isRemote
 
-    if not version
+    if not newVersion
       log.warn """
         No local version found for '#{depName}'!
 
@@ -52,29 +52,28 @@ module.exports = (args) ->
       """
       return
 
-    unless semver.valid(version) or semver.validRange(version)
-      log.warn "Malformed version: '#{version}'"
+    unless semver.valid(newVersion) or semver.validRange(newVersion)
+      log.warn "Malformed version: '#{newVersion}'"
       return
 
-    newValue =
-      if userName
-      then userName + "/" + depName + "#" + version
-      else version
+    versionPath = newVersion
+    if userName
+      versionPath = userName + "/" + depName + "#" + newVersion
 
-    if newValue is oldValue
+    if versionPath is oldVersion
       log.warn "Dependency is up-to-date!"
       return
 
-    deps[depName] = newValue
+    deps[depName] = versionPath
     json.dependencies = sortObject deps
 
     log.moat 1
-    if oldValue
+    if oldVersion
       if userName
-      then log.gray oldValue.split("#")[1]
-      else log.gray oldValue
+      then log.gray oldVersion.split("#")[1]
+      else log.gray oldVersion
       log.white " -> "
-    log.green version
+    log.green newVersion
     log.moat 1
 
     json = JSON.stringify json, null, 2
@@ -84,7 +83,7 @@ module.exports = (args) ->
     git.stageFiles modulePath, "*"
     .then ->
       git.commit modulePath, args.m or
-        if oldValue then "Upgrade '#{depName}' to v#{version}"
+        if oldVersion then "Upgrade '#{depName}' to v#{newVersion}"
         else "Depend on '#{depName}'"
 
 getLatestVersion = (moduleName, remote) ->
