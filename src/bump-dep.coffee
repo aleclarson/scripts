@@ -6,6 +6,8 @@ exec = require "exec"
 git = require "git-utils"
 fs = require "io/sync"
 
+npmRoot = exec.sync "npm root -g"
+
 module.exports = (args) ->
 
   modulePath = process.cwd()
@@ -20,33 +22,16 @@ module.exports = (args) ->
     log.warn "Must specify at least one dependency name!"
     return
 
-  promise =
-    if args.commit is no
-    then Promise yes
-    else git.isClean modulePath
+  for depName in args._
+    bumpDep depName, args, {path: modulePath, json}
 
-  promise.then (isClean) ->
+  json = JSON.stringify json, null, 2
+  fs.write jsonPath, json + log.ln
+  return
 
-    if not isClean
-      log.warn "Repository has uncommitted changes!"
-      return
+bumpDep = (depName, args, parent) ->
 
-    for depName in args._
-      bumpDep depName, args, json
-
-    json = JSON.stringify json, null, 2
-    fs.write jsonPath, json + log.ln
-
-    return if args.commit is no
-    git.stageFiles modulePath, "*"
-    .then ->
-      git.commit modulePath, args.m or
-        if oldVersion then "Upgrade '#{depName}' to v#{newVersion}"
-        else "Depend on '#{depName}'"
-
-bumpDep = (depName, args, json) ->
-
-  deps = json.dependencies or {}
+  deps = parent.json.dependencies or {}
   oldVersion = deps[depName]
 
   if not isRemote = args.remote is yes
@@ -80,7 +65,7 @@ bumpDep = (depName, args, json) ->
     return
 
   deps[depName] = versionPath
-  json.dependencies = sortObject deps
+  parent.json.dependencies = sortObject deps
 
   log.moat 1
   log.white depName
@@ -92,6 +77,39 @@ bumpDep = (depName, args, json) ->
     log.white " -> "
   log.green newVersion
   log.moat 1
+
+  depPath = path.resolve parent.path, "node_modules", depName
+  return if fs.exists depPath
+
+  {green} = log.color
+
+  if args.ours is yes
+    targetPath = path.resolve npmRoot, depName
+    log.moat 1
+    log.white """
+      Linking:
+        #{green depPath}
+        -> #{targetPath}
+    """
+    log.moat 1
+    log.flush()
+
+    fs.writeDir path.dirname depPath
+    fs.writeLink depPath, targetPath
+    return
+
+  log.moat 1
+  log.white """
+    Installing:
+      #{green depPath}
+  """
+  log.moat 1
+  log.flush()
+
+  try exec.sync "npm install #{depPath}", cwd: parent.path
+  catch error
+     throw error unless /WARN/.test error.message
+  return
 
 getLatestVersion = (moduleName, remote) ->
 
@@ -105,7 +123,6 @@ getLatestVersion = (moduleName, remote) ->
     moduleParent = path.dirname moduleParent
 
   if not modulePath
-    npmRoot = exec.sync "npm root -g"
     modulePath = path.join npmRoot, moduleName
 
   jsonPath = path.join modulePath, "package.json"
