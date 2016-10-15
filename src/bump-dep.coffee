@@ -117,15 +117,14 @@ getLatestVersion = (moduleName, remote) ->
     return exec.sync "npm view #{moduleName} version"
 
   moduleParent = process.cwd()
-  while moduleParent isnt "."
+  while moduleParent isnt path.sep
     modulePath = path.join moduleParent, "node_modules", moduleName
     break if fs.isDir modulePath
     moduleParent = path.dirname moduleParent
 
-  if not modulePath
-    modulePath = path.join npmRoot, moduleName
-
+  modulePath ?= path.join npmRoot, moduleName
   jsonPath = path.join modulePath, "package.json"
   return if not fs.isFile jsonPath
+
   json = JSON.parse fs.read jsonPath
   return json.version
