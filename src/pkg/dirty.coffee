@@ -1,34 +1,25 @@
 
-SortedArray = require "sorted-array"
-path = require "path"
 git = require "git-utils"
 fs = require "io/sync"
 
+inverseSort = require "../utils/inverseSort"
+
 module.exports = (args) ->
-  dirty = []
+  files = fs.readDir "."
+  inverseSort files, (file) ->
+    return if not fs.isDir file
+    return if not git.isRepo file
+    git.isClean(file).then (clean) -> not clean
 
-  Promise.all fs.readDir("."), (mod) ->
-    return if not fs.isDir mod
-    return if not git.isRepo mod
-    git.isClean(mod).then (isClean) ->
-      return if isClean
-      jsonPath = path.join mod, "package.json"
-      try json = JSON.parse fs.read jsonPath
-      json and dirty.push {name: mod, deps: json.dependencies}
-
-  .then ->
-
-    sorted = SortedArray dirty, (a, b) ->
-      if a.deps and a.deps[b.name]
-      then 1 else -1
-
-    sorted.array.forEach (mod) ->
+  .then (pkgs) ->
+    for pkg, index in pkgs
       log.moat 1
-      log.white mod.name
+      log.white pkg.name
       log.plusIndent 2
-      for dep in dirty
-        continue if not dep.deps?[mod.name]
+      for dep in pkgs
+        continue if not dep.deps[pkg.name]
         log.moat 0
         log.gray dep.name
       log.popIndent()
       log.moat 1
+    return
