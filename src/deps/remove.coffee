@@ -1,47 +1,33 @@
 
-# deps remove [pkgs...]
+hasKeys = require "hasKeys"
+path = require "path"
+fs = require "io/sync"
 
-# hasKeys = require "hasKeys"
-# assert = require "assert"
-# isType = require "isType"
-#
-# module.exports = (options) ->
-#
-#   options.name = options._.shift()
-#   assert isType(options.name, String), "Missing dependency name!"
-#
-#   if options.all
-#     return lotus.Module.crawl()
-#     .then (modules) ->
-#       Promise.all modules, (module) ->
-#         removeDependency module, options
-#
-#   lotus.Module.load process.cwd()
-#   .then (module) ->
-#     removeDependency module, options
-#
-# removeDependency = (module, options) ->
-#
-#   module.load [ "config" ]
-#
-#   .then ->
-#
-#     configKey =
-#       if options.dev then "devDependencies"
-#       else "dependencies"
-#
-#     deps = module.config[configKey]
-#     return unless deps and deps[options.name]
-#
-#     log.moat 1
-#     log.green.dim lotus.relative module.path + " { "
-#     log.white options.name + ": "
-#     log.red deps[options.name]
-#     log.green.dim " }"
-#     log.moat 1
-#     return if options.dry
-#
-#     delete deps[options.name]
-#     delete module.config[configKey] unless hasKeys deps
-#
-#     module.saveConfig()
+module.exports = (args) ->
+
+  if not args._.length
+    return log.warn "Must provide at least one dependency name!"
+
+  modulePath = process.cwd()
+
+  jsonPath = path.resolve modulePath, "package.json"
+  if not fs.isFile jsonPath
+    return log.warn "Must be in a directory with a 'package.json' file!"
+
+  json = require jsonPath
+  deps = json.dependencies or {}
+
+  for dep in args._
+    delete deps[dep]
+    installedPath = path.resolve modulePath, "node_modules", dep
+    if fs.exists installedPath
+      log.moat 1
+      log.red "Removing: "
+      log.white path.relative modulePath, installedPath
+      log.moat 1
+      log.flush()
+      fs.remove installedPath
+
+  json = JSON.stringify json, null, 2
+  fs.write jsonPath, json + log.ln
+  return
