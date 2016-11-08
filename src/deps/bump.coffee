@@ -81,15 +81,16 @@ bumpDep = (depName, args, parent) ->
   depPath = path.resolve parent.path, "node_modules", depName
   return if fs.exists depPath
 
-  {green} = log.color
+  {green, yellow} = log.color
 
   if args.ours is yes
     targetPath = path.resolve npmRoot, depName
     log.moat 1
     log.white """
-      Linking:
+      Creating symlink..
         #{green depPath}
-        -> #{targetPath}
+      ..that points to:
+        #{yellow targetPath}
     """
     log.moat 1
     log.flush()
