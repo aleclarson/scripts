@@ -1,4 +1,6 @@
 
+{resolveModule} = require "resolve"
+
 isType = require "isType"
 path = require "path"
 exec = require "exec"
@@ -8,64 +10,42 @@ fs = require "io/sync"
 npmBin = exec.sync "npm bin -g"
 npmRoot = exec.sync "npm root -g"
 
+{red, green, yellow} = log.color
+
 module.exports = (args) ->
-  {green} = log.color
+
+  modulePath =
+    if moduleName = args._[0]
+    then path.resolve moduleName
+    else process.cwd()
 
   if args.g or args.global
-
-    if moduleName = args._[0]
-      targetPath = path.resolve moduleName
-    else
-      targetPath = process.cwd()
-      moduleName = path.basename targetPath
-
-    linkPath = path.join npmRoot, moduleName
-
-    jsonPath = path.join targetPath, "package.json"
-    if fs.isFile jsonPath
-      json = fs.read jsonPath
-      json = JSON.parse json
-      if isType json.bin, Object
-        sync.each json.bin, (scriptPath, scriptName) ->
-          scriptPath = path.resolve targetPath, scriptPath
-          binPath = path.join npmBin, scriptName
-          log.moat 1
-          log.white """
-            Linking:
-              #{green binPath}
-              -> #{scriptPath}
-          """
-          log.moat 1
-          fs.writeLink binPath, scriptPath
-          fs.setMode binPath, "755"
-
+    createGlobalLink modulePath, args
+  else if args._.length
+    createLocalLink modulePath, args
   else
-    moduleName = args._[0]
-    if not moduleName
-      log.warn "Must provide a module name!"
-      return
+    createLocalLinks modulePath, args
+  return
 
-    linkPath = path.resolve "node_modules", moduleName
-    targetPath = path.join npmRoot, moduleName
+createLink = (linkPath, targetPath, args) ->
 
   if not fs.exists targetPath
     log.warn "'targetPath' does not exist:\n  #{targetPath}"
     return
 
   if fs.exists linkPath
-
     if args.f
       fs.remove linkPath
-
     else
       log.warn "'linkPath' already exists:\n  #{linkPath}"
       return
 
   log.moat 1
   log.white """
-    Linking:
+    Creating symlink..
       #{green linkPath}
-      -> #{targetPath}
+    ..that points to:
+      #{yellow targetPath}
   """
   log.moat 1
 
@@ -73,68 +53,69 @@ module.exports = (args) ->
   fs.writeLink linkPath, targetPath
   return
 
-# fs = require "io/sync"
-# exec = require "exec"
-# path = require "path"
-# sync = require "sync"
-#
-# module.exports = (args) ->
-#
-#   modulePath =
-#     if args._.length
-#     then path.resolve args._[0]
-#     else process.cwd()
-#
-#   manifestPath = path.join modulePath, "manifest.json"
-#   if fs.exists manifestPath
-#     manifest = require manifestPath
-#   else
-#     log.warn "'link-deps' uses the manifest, please call 'read-deps' first!"
-#     return
-#
-#   manifest[modulePath] = dependers: []
-#
-#   if args.refresh
-#     sync.each manifest, (depJson, depPath) ->
-#       return if not path.isAbsolute depPath
-#       moduleDeps = path.join depPath, "node_modules"
-#
-#       log.moat 1
-#       log.white """
-#         Refreshing:
-#           #{moduleDeps}
-#       """
-#       log.moat 1
-#
-#       fs.match moduleDeps + "/*"
-#         .forEach (filePath) ->
-#           if fs.isLink filePath
-#             fs.remove filePath
-#           return
-#
-#   npmRoot = exec.sync "npm root -g"
-#   sync.each manifest, (depJson, depPath) ->
-#
-#     return if not path.isAbsolute depPath
-#     depName = path.basename depPath
-#
-#     globalPath = path.join npmRoot, depName
-#     return if not fs.exists globalPath
-#
-#     sync.each depJson.dependers, (parentPath) ->
-#       installedPath = path.join parentPath, "node_modules", depName
-#       if fs.exists installedPath
-#         return if not fs.isLink installedPath
-#         return if not fs.isLinkBroken installedPath
-#
-#       log.moat 1
-#       log.white """
-#         Linking:
-#           #{installedPath}
-#           -> #{globalPath}
-#       """
-#       log.moat 1
-#
-#       fs.writeDir path.dirname installedPath
-#       fs.writeLink installedPath, globalPath
-#       return
+createLocalLink = (modulePath, args) ->
+  moduleName = path.basename modulePath
+  linkPath = path.resolve "node_modules", moduleName
+  targetPath = path.join npmRoot, moduleName
+  createLink linkPath, targetPath, args
+
+createGlobalLink = (modulePath, args) ->
+
+  moduleName = path.basename modulePath
+  linkPath = path.join npmRoot, moduleName
+  createLink linkPath, modulePath, args
+
+  jsonPath = path.join modulePath, "package.json"
+  return unless fs.isFile jsonPath
+
+  json = require jsonPath
+  return unless isType json.bin, Object
+
+  for scriptName, scriptPath of json.bin
+    scriptPath = path.resolve modulePath, scriptPath
+    binPath = path.join npmBin, scriptName
+    log.moat 1
+    log.white """
+      Creating symlink..
+        #{green binPath}
+      ..that points to:
+        #{yellow scriptPath}
+    """
+    log.moat 1
+    fs.writeLink binPath, scriptPath
+    fs.setMode binPath, "755"
+  return
+
+createLocalLinks = (modulePath, args) ->
+
+  jsonPath = path.join modulePath, "package.json"
+  return unless fs.isFile jsonPath
+
+  json = require jsonPath
+  deps = json.dependencies
+  return unless isType deps, Object
+
+  gitRegex = /[^\/]+\/[^\#]+(\#.+)?/g
+
+  for name, version of deps
+    isGit = gitRegex.test version
+
+    unless dep = resolveModule name, modulePath
+      log.warn "Cannot resolve dependency: #{green name} #{yellow version}"
+      continue
+
+    globalPath = path.join npmRoot, name
+    unless fs.exists globalPath
+      log.warn "Global dependency does not exist: #{green globalPath}"
+      continue
+
+    linkPath = path.join modulePath, "node_modules", name
+    if fs.exists linkPath
+      continue unless fs.isLink linkPath
+      continue unless fs.isLinkBroken linkPath
+      fs.remove linkPath
+      log.moat 1
+      log.white "Removing broken symlink: #{red name}"
+      log.moat 1
+
+    createLink linkPath, globalPath, args
