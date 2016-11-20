@@ -58,3 +58,13 @@ publishRepo = (modulePath, args) ->
     log.green newVersion
     log.moat 1
     git.commit modulePath, newVersion
+    .then -> git.pushBranch modulePath
+
+  # 10. Create a tag for the new version.
+  .then ->
+    git.addTag modulePath, newVersion
+    .then -> git.pushTags modulePath
+
+  # 11. End up on the 'unstable' branch.
+  .then ->
+    git.setBranch modulePath, "unstable"
