@@ -6,14 +6,30 @@ fs = require "io/sync"
 
 module.exports = (args) ->
 
-  modulePath = process.cwd()
-  jsonPath = path.resolve "package.json"
+  if args.all
+    files = fs.readDir "."
+    for file in files
+      modulePath = path.resolve file
+      printOutdated modulePath, args
+    return
+
+  modulePath = path.resolve args._[0] or process.cwd()
+  printOutdated modulePath, args
+  return
+
+printOutdated = (modulePath, args) ->
+
+  jsonPath = path.resolve modulePath, "package.json"
   unless fs.exists jsonPath
-    return log.warn "Missing package.json"
+    args.all or log.warn "Missing package.json"
+    return
 
   json = require jsonPath
   unless deps = json.dependencies
-    return log.warn "No dependencies exist"
+    args.all or log.warn "No dependencies exist"
+    return
+
+  outdated = []
 
   # TODO: Support remote deps?
   for dep, version of deps
@@ -22,6 +38,16 @@ module.exports = (args) ->
     latestVersion = fetchLatestVersion dep
     continue unless verifyVersion latestVersion
     continue unless semver.gt latestVersion, version
+    outdated.push {dep, version, latestVersion}
+
+  return unless outdated.length
+
+  if args.all
+    log.moat 1
+    log.white path.basename modulePath
+    log.plusIndent 2
+
+  for {dep, version, latestVersion} in outdated
     log.moat 1
     log.white dep
     log.gray " current: "
@@ -29,6 +55,10 @@ module.exports = (args) ->
     log.gray " latest: "
     log.yellow latestVersion
     log.moat 1
+
+  if args.all
+    log.popIndent()
+  return
 
 #
 # Helpers
