@@ -1,5 +1,5 @@
 
-# scripts v2.1.0
+# scripts v3.0.0
 
 ```sh
 # Add your custom scripts to the 'src' directory.
