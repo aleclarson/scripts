@@ -1,4 +1,11 @@
 
+# deps list
+#   Prints the shallow dependencies (along which their version and inverse dependencies)
+#
+# deps list -r
+#   Prints the recursive dependencies
+
+
 {resolveModule} = require "resolve"
 
 exec = require "exec"

@@ -10,6 +10,10 @@ stabilityLevels =
 
 module.exports = (args) ->
 
+  if args.help
+    log help
+    return
+
   moduleName = args._[0]
   if not moduleName
     log.warn "Must provide a module name!"
@@ -41,10 +45,12 @@ module.exports = (args) ->
   ignoredPaths = ["node_modules/"]
 
   if args.c or args.coffee
+    ignoredPaths.push "js/"
     json.main ?= "js/index"
     json.plugins = ["lotus-coffee"]
-    mergeDefaults json, require "../templates/coffee.package.json"
-    ignoredPaths.push "js/"
+    json.scripts =
+      build: "coffee-build -v 1.11.x -b -o js src"
+      postinstall: "npm run build"
 
   stabilityLevel =
     if stability = args.s or args.stability
@@ -52,7 +58,12 @@ module.exports = (args) ->
     else ""
 
   if stabilityLevel is undefined
-    log.warn "Invalid stability level: '#{stability}'"
+    log.warn """
+      Invalid stability level: '#{stability}'
+
+      Valid values:
+        #{Object.keys(stabilityLevels).join('\n  ')}
+    """
     return
 
   #
@@ -80,7 +91,7 @@ module.exports = (args) ->
   log.it "Creating file: '#{ignorePath}'"
 
   licensePath = path.join modulePath, "LICENSE"
-  licenseTemplatePath = path.join __dirname, "../templates/LICENSE"
+  licenseTemplatePath = path.resolve __dirname, "../../templates/LICENSE"
   fs.write licensePath, fs.read licenseTemplatePath
   log.it "Creating file: '#{licensePath}'"
 
@@ -88,3 +99,22 @@ module.exports = (args) ->
   fs.write readmePath, "\n# #{json.name} v#{json.version} #{stabilityLevel}\n"
   log.it "Creating file: '#{readmePath}'"
   return
+
+help = """
+  Options:
+
+    --coffee -c
+      Transpile from 'src' to 'js' directory
+
+    --version -v
+      Bump to a specific version
+
+    --description -d
+      The "description" field of package.json
+
+    --main -m
+      The "main" field of package.json
+
+    --stability -s
+      Must equal "experimental", "stable", or "locked"
+"""

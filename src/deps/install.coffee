@@ -5,7 +5,6 @@ path = require "path"
 sync = require "sync"
 
 module.exports = (args) ->
-  moduleName = args._[0] or path.basename process.cwd()
 
   modulePath =
     if args._.length

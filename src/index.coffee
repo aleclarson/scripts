@@ -2,6 +2,7 @@
 require "../env"
 
 minimist = require "minimist"
+isType = require "isType"
 path = require "path"
 fs = require "io/sync"
 
@@ -26,24 +27,35 @@ module.exports = (script, args = []) ->
   args = args.concat process.argv.slice 2
   args = minimist args
 
-  # Get valid script names.
-  scripts = fs.readDir __dirname
-    .map (script) ->
-      ext = path.extname script
-      return path.basename script, ext
-
-  index = scripts.indexOf script
+  # Check if the script name is valid.
+  scriptsInstalled = require "../scripts.json"
+  index = scriptsInstalled.indexOf script
   if index < 0
     return log.warn """
       Unrecognized script name: '#{script}'
 
       Valid scripts include:
-        #{scripts.join "\n  "}
+        #{scriptsInstalled.join "\n  "}
     """
 
   Promise.try ->
     start = require "./" + script
-    return start args
+
+    if isType start, Function
+      return start args
+
+    if isType start, Object
+      commands = []
+      while args._.length
+        commands.push command = args._.shift()
+        if isType start[command], Function
+          start = start[command]()
+          if isType start, Function
+            return start args
+        break if not isType start, Object
+      throw Error "Unrecognized command: " + commands.join " "
+
+    throw Error "Script must return a function or object: #{script}"
 
   .fail (error) ->
     log.moat 1
