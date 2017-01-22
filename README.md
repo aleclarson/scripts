@@ -1,20 +1,7 @@
 
 # scripts v3.0.0
 
-```sh
-# Add your custom scripts to the 'src' directory.
-# Make sure they export a function!
-# The command line args are passed to it.
-git clone https://github.com/aleclarson/scripts.git
-
-# Install dependencies.
-npm install
-
-# Install bin scripts to $(npm bin -g).
-# NOTE: This also globally installs this module; using the
-#       `__dirname` instead of the package.json "name" field.
-sudo node postinstall.js
-```
+Basic "terminal scripts" module (written in `coffee-script`).
 
 ### pkg
 
@@ -39,38 +26,14 @@ Scripts in the `deps` namespace are used for managing the `node_modules` directo
 - **remove**: Remove the given dependencies from the current package.
 - **scan**: Scan the source files for `require` calls, then print any unused or missing dependencies.
 
-## Symbolic links
+---
+
+## Installation
 
 ```sh
-# Link any local dependencies that are missing from $PWD/node_modules
-deps link
+git clone https://github.com/aleclarson/scripts.git
+npm install
 
-# To call `deps link` for every recursive dependency
-deps link -r
-
-# Links $PWD to $(npm root -g)
-deps link -g
-```
-
-## Adding dependencies
-
-```sh
-# Add a remote dependency.
-deps add [pkgs...]
-
-# Add a local dependency.
-deps add [pkgs...] --ours
-```
-
-## Updating dependencies
-
-```sh
-# Find dependencies that could be upgraded.
-deps outdated
-
-# Bump a dependency to its latest version.
-deps bump [pkg]
-
-# Bump a dependency to a specific version.
-deps bump [pkg]@[version]
+# Add scripts to your global "bin" directory.
+sudo node postinstall.js
 ```
