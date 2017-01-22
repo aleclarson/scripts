@@ -1,5 +1,5 @@
 
-# scripts v3.0.0
+# scripts v3.1.0
 
 Basic "terminal scripts" module (written in `coffee-script`).
 
