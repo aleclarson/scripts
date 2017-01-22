@@ -6,3 +6,4 @@ module.exports =
   init: -> require "./init"
   outdated: -> require "./outdated"
   publish: -> require "./publish"
+  tag: -> require "./tag"

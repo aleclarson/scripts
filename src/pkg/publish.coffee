@@ -1,70 +1,159 @@
 
-Random = require "random"
-path = require "path"
-git = require "git-utils"
+require "LazyVar"
 
+AsyncTaskGroup = require "AsyncTaskGroup"
+Promise = require "Promise"
+hasKeys = require "hasKeys"
+path = require "path"
+exec = require "exec"
+git = require "git-utils"
+log = require "log"
+fs = require "io/sync"
+
+# Currently only supports *.coffee modules that use
+# the "coffee-build" module in their postinstall phase.
 module.exports = (args) ->
 
-  modulePath = process.cwd()
-  unless git.isRepo modulePath
-    return log.warn "Current directory must be a git repository!"
+  modulePath = path.resolve args._[0] or ""
+  updateModule modulePath
 
-  git.isClean(modulePath).then (clean) ->
-    if clean
-    then publishRepo modulePath, args
-    else log.warn "Current repo has uncommitted changes!"
+  #
+  # else
+  #   files = fs.readDir process.cwd()
+  #   tasks = AsyncTaskGroup {maxConcurrent: 1}
+  #   tasks.map files, (moduleName) ->
+  #     modulePath = path.resolve moduleName
+  #     return unless git.isRepo modulePath
+  #     return unless fs.exists modulePath + "/package.json"
+  #     pjson = require modulePath + "/package.json"
+  #     return unless scripts = pjson.scripts
+  #     return unless scripts.build?.startsWith "coffee-build"
+  #     log.moat 1
+  #     log.yellow moduleName
+  #     log.moat 1
 
-publishRepo = (modulePath, args) ->
+#
+# Internal helpers
+#
 
-  newVersion = null
-  tmpBranch = Random.id 12
+ensureMasterBranch = (modulePath, options = {}) ->
 
-  # 1. Ensure we are on the 'unstable' branch.
-  git.getBranch(modulePath).then (branch) ->
-    if branch isnt "unstable"
-      git.setBranch modulePath, "unstable"
+  git.isClean modulePath
+  .then (isClean) ->
 
-  # 2. Get the new package version.
+    if isClean
+      promise = Promise()
+
+    else if options.forceClean
+      promise = git.resetBranch modulePath, "HEAD", {clean: yes}
+
+    else throw Error "is not clean"
+
   .then ->
-    jsonPath = path.resolve modulePath, "package.json"
-    newVersion = require(jsonPath).version
+    git.getBranch modulePath
+    .then (branch) ->
+      if branch isnt "master"
+        git.setBranch modulePath, "master"
 
-  # 3. Clone it into a temporary branch.
-  .then -> git.setBranch modulePath, tmpBranch, {force: yes}
+createDistBranch = (modulePath) ->
+  branch = "dist"
 
-  # 4. Combine the commit history for cherry-picking.
-  .then -> git.resetBranch modulePath, null
-  .then -> git.commit modulePath, "combine all commits"
+  # Delete pre-existing 'dist' branch.
+  git.hasBranch modulePath, branch
+  .then (hasBranch) ->
+    if hasBranch
+      git.deleteBranch modulePath, branch
 
-  # 5. Switch back to the 'master' branch.
-  .then (tmpCommit) ->
-    git.setBranch modulePath, "master"
-
-    # 6. Delete all files in 'master' branch for easier cherry-picking.
-    .then -> git.deleteFile modulePath, "*", {force: yes}
-    .then -> git.commit modulePath, "delete all files"
-
-    # 7. Cherry-pick the temporary commit.
-    .then -> git.pick modulePath, tmpCommit
-
-  # 8. Delete the temporary branch.
-  .then -> git.deleteBranch modulePath, tmpBranch
-
-  # 9. Publish the changes on the 'master' branch.
-  .then -> git.resetBranch modulePath, "HEAD^^"
+  # Create the 'dist' branch.
   .then ->
-    log.moat 1
-    log.white "Committing new version: "
-    log.green newVersion
-    log.moat 1
-    git.commit modulePath, newVersion
-    .then -> git.pushBranch modulePath
+    git.addBranch modulePath, branch
 
-  # 10. Create a tag for the new version.
+ignoredPaths = ["src/", "spec/", "**/*.map", "README.md", "LICENSE"]
+updateGitignore = (modulePath) ->
+  filePath =  modulePath + "/.gitignore"
+  ignored = fs.read(filePath).split "\n"
+
+  if -1 isnt index = ignored.indexOf "js/"
+    ignored.splice index, 1
+
+  ignoredPaths.forEach (ignoredPath) ->
+    if -1 is ignored.indexOf ignoredPath
+      ignored.push ignoredPath
+
+  fs.write filePath, ignored.join "\n"
+
+updatePackageJson = (jsonPath) ->
+  pjson = require jsonPath
+  delete pjson.plugins
+  delete pjson.devDependencies
+  delete pjson.implicitDependencies
+  if pjson.scripts
+    delete pjson.scripts.build
+    delete pjson.scripts.postinstall
+    unless hasKeys pjson.scripts
+      delete pjson.scripts
+  pjson = JSON.stringify pjson, null, 2
+  fs.write jsonPath, pjson + "\n"
+
+squashDistBranch = (modulePath) ->
+  git.getBranch modulePath
+  .then (branch) ->
+    if branch isnt "dist"
+      throw Error "must be on 'dist' branch"
+    git.findVersion modulePath, "*"
+    .then (version) ->
+      if version is null
+        throw Error "has no version tag"
+      git.resetBranch modulePath, null
+      .then -> git.stageFiles modulePath, "*"
+      .then -> exec.async "git rm -r --cached .", {cwd: modulePath}
+      .then -> git.stageFiles modulePath, "*"
+      .then ->
+        log.moat 1
+        log.white "Publishing: "
+        log.yellow path.basename modulePath
+        log.green " v" + version
+        log.moat 1
+        git.pushVersion modulePath, version, {force: yes}
+
+updateModule = (modulePath) ->
+  moduleName = path.basename modulePath
+
+  unless fs.isDir modulePath
+    throw Error "'#{moduleName}' is not a directory!"
+
+  jsonPath = path.join modulePath, "package.json"
+  unless fs.isFile jsonPath
+    throw Error "'#{moduleName}' has no package.json file!"
+
+  Promise.all [
+    git.isClean modulePath
+    git.getBranch modulePath
+  ]
+  .then (isClean, branch) ->
+    return if isClean or (branch is null)
+    throw Error "is not clean"
+
   .then ->
-    git.addTag modulePath, newVersion
-    .then -> git.pushTags modulePath
+    ensureMasterBranch modulePath
+    .then -> createDistBranch modulePath
+    .then -> updateGitignore modulePath
+    .then -> updatePackageJson jsonPath
+    .then -> squashDistBranch modulePath
+    .then -> ensureMasterBranch modulePath, {forceClean: yes}
 
-  # 11. End up on the 'unstable' branch.
+  # End on the 'unstable' branch.
   .then ->
     git.setBranch modulePath, "unstable"
+
+  .fail (error) ->
+    log.moat 1
+    log.white path.basename modulePath
+    log.red " #{error.message}!"
+    log.moat 0
+    log.gray error.stack
+    log.moat 1
+
+  # Ensure the 'js' directory is pristine (git may have deleted it).
+  .then ->
+    exec.async "coffee -cb -o js src", {cwd: modulePath}

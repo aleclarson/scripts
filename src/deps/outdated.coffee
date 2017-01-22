@@ -1,5 +1,5 @@
 
-semver = require "semver"
+semver = require "node-semver"
 exec = require "exec"
 path = require "path"
 fs = require "io/sync"
