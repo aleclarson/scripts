@@ -1,6 +1,6 @@
 {
   "name": "scripts",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "main": "js/index",
   "plugins": [
     "lotus-coffee"
@@ -28,10 +28,13 @@
     "mergeDefaults": "aleclarson/mergeDefaults#1.0.1",
     "minimist": "^1.2.0",
     "node-semver": "5.1.0",
+    "prompt": "aleclarson/prompt#2.0.2",
+    "random": "aleclarson/random#1.0.4",
     "resolve": "aleclarson/resolve#1.0.0",
     "semver": "^5.3.0",
     "sortObject": "aleclarson/sortObject#1.0.1",
     "sorted-array": "aleclarson/sorted-array#2.0.1",
+    "steal": "aleclarson/steal#1.2.0",
     "sync": "aleclarson/sync#1.0.1"
   },
   "implicitDependencies": [

@@ -1,6 +1,8 @@
 
 sortObject = require "sortObject"
 semver = require "semver"
+prompt = require "prompt"
+steal = require "steal"
 path = require "path"
 exec = require "exec"
 git = require "git-utils"
@@ -10,80 +12,198 @@ npmRoot = exec.sync "npm root -g"
 
 module.exports = (args) ->
 
-  modulePath = process.cwd()
-  jsonPath = path.join modulePath, "package.json"
-  if not fs.isFile jsonPath
-    log.warn "Current directory is not a valid module: '#{modulePath}'"
+  depNames = steal args, "_"
+  unless depNames and depNames.length
+    return log.warn "Must specify at least one dependency name!"
+
+  if args.v?
+
+    if depNames.length > 1
+      return log.warn "Cannot specify -v when updating multiple dependencies!"
+
+    unless semver.valid(args.v) or semver.validRange(args.v)
+      return log.warn "Malformed version: '#{args.v}'"
+
+  if args.all
+  then updateDependingPackages depNames, args
+  else updateCurrentPackage depNames, args
+
+updateCurrentPackage = (depNames, args) ->
+
+  jsonPath = path.resolve "package.json"
+  unless fs.isFile jsonPath
+    log.warn "Missing json: '#{jsonPath}'"
     return
 
-  json = JSON.parse fs.read jsonPath
-
-  if not args._.length
-    log.warn "Must specify at least one dependency name!"
+  latestVersions = readVersions depNames, args
+  updatePackageJson jsonPath, (json) ->
+    parent = {json, path: path.dirname jsonPath}
+    for depName, latestVersion of latestVersions
+      if latestVersion
+      then bumpDependency depName, latestVersion, args, parent
+      else log.warn "Missing version: '#{depName}'"
     return
 
-  for depName in args._
-    bumpDep depName, args, {path: modulePath, json}
-
-  json = JSON.stringify json, null, 2
-  fs.write jsonPath, json + log.ln
+updateDependingPackages = (depNames, args) ->
+  latestVersions = readVersions depNames, args
+  moduleNames = fs.readDir "."
+  for moduleName in moduleNames
+    cancelled =
+      updateDependingPackage moduleName, latestVersions, args
+    return if cancelled
   return
 
-bumpDep = (depName, args, parent) ->
+missingVersions = {}
+
+updateDependingPackage = (moduleName, latestVersions, args) ->
+  modulePath = path.resolve moduleName
+  jsonPath = path.join modulePath, "package.json"
+  return no unless fs.isFile jsonPath
+
+  updatePackageJson jsonPath, (json) ->
+    return no unless deps = json.dependencies
+
+    parent = {json, path: modulePath}
+    for depName, latestVersion of latestVersions
+
+      oldValue = deps[depName]
+      continue unless oldValue?
+
+      unless latestVersion
+        unless missingVersions[depName]
+          missingVersions[depName] = yes
+          log.warn "Missing version: '#{depName}'"
+        continue
+
+      oldVersion = parseVersion oldValue
+      continue if semver.gte oldVersion, latestVersion
+
+      diff = semver.diff oldVersion, latestVersion
+      continue if args.only? and diff isnt args.only
+
+      log.moat 1
+      log.yellow moduleName
+      log.moat 0
+      log.plusIndent 2
+      log.gray "current: "
+      log.white oldVersion
+      log.moat 0
+
+      # Auto-bump patch versions.
+      if diff is "patch"
+        log.gray "auto-bumping: "
+        log.green latestVersion
+        log.moat 1
+        shouldBump = yes
+
+      else
+        log.gray "latest:  "
+        log.green latestVersion
+        log.moat 1
+        shouldBump = prompt.sync {bool: yes}
+
+      log.popIndent()
+
+      if shouldBump is null
+        return yes
+
+      if shouldBump
+        bumpDependency depName, latestVersion, args, parent
+
+    return no
+
+#
+# Internal helpers
+#
+
+getLatestVersion = (moduleName, isRemote) ->
+
+  if isRemote
+    return exec.sync "npm view #{moduleName} version"
+
+  moduleParent = process.cwd()
+  while moduleParent isnt path.sep
+    modulePath = path.join moduleParent, "node_modules", moduleName
+    break if fs.isDir modulePath
+    moduleParent = path.dirname moduleParent
+
+  modulePath ?= path.join npmRoot, moduleName
+  jsonPath = path.join modulePath, "package.json"
+  return unless fs.isFile jsonPath
+
+  json = JSON.parse fs.read jsonPath
+  return json.version
+
+readVersions = (depNames, args) ->
+  versions = {}
+
+  if args.v?
+    versions[depNames[0]] = args.v
+    return versions
+
+  for depName in depNames
+    versions[depName] = getLatestVersion depName, args.remote
+  return versions
+
+updatePackageJson = (jsonPath, updater) ->
+  json = JSON.parse fs.read jsonPath
+  result = updater json
+  json = JSON.stringify json, null, 2
+  fs.write jsonPath, json + log.ln
+  return result
+
+parseVersion = (string) ->
+  if 0 <= string.indexOf "#"
+    return string.split("#")[1]
+  return string
+
+parseUsername = (string) ->
+  parts = string.split "/"
+  if 0 <= string.indexOf "://"
+    parts = parts.splice -2
+  if parts.length > 1
+    return parts.shift()
+  return null
+
+bumpDependency = (depName, newVersion, args, parent) ->
 
   deps = parent.json.dependencies or {}
-  oldVersion = deps[depName]
+  oldValue = deps[depName]
 
-  if not isRemote = args.remote is yes
-    if args.ours is yes
-      userName = exec.sync "git config --get user.name"
-    else if oldVersion and oldVersion.indexOf("/") >= 0
-      userName = oldVersion.split("/")[0]
+  unless args.remote
+    username =
+      if args.ours
+      then exec.sync "git config --get user.name"
+      else parseUsername oldValue
 
-  newVersion = args.v or
-    getLatestVersion depName, isRemote
+  newValue =
+    if username
+    then username + "/" + depName + "#" + newVersion
+    else newVersion
 
-  if not newVersion
-    log.warn """
-      No local version found for '#{depName}'!
-
-      Specify -r to use latest NPM version.
-      Specify -v to use custom version.
-    """
+  if newValue is oldValue
+    log.warn "#{depName} v#{newVersion} is already installed!"
     return
 
-  unless semver.valid(newVersion) or semver.validRange(newVersion)
-    log.warn "Malformed version: '#{newVersion}'"
-    return
-
-  versionPath = newVersion
-  if userName
-    versionPath = userName + "/" + depName + "#" + newVersion
-
-  if versionPath is oldVersion
-    log.warn "Dependency is up-to-date!"
-    return
-
-  deps[depName] = versionPath
+  deps[depName] = newValue
   parent.json.dependencies = sortObject deps
 
-  log.moat 1
-  log.white depName
-  log.moat 0
-  if oldVersion
-    if userName
-    then log.gray oldVersion.split("#")[1]
-    else log.gray oldVersion
-    log.white " -> "
-  log.green newVersion
-  log.moat 1
+  unless args.all
+    log.moat 1
+    log.white depName
+    log.moat 0
+    if oldValue
+      log.gray parseVersion oldValue
+      log.white " -> "
+    log.green newVersion
+    log.moat 1
 
   depPath = path.resolve parent.path, "node_modules", depName
   return if fs.exists depPath
 
   {green, yellow} = log.color
 
-  if args.ours is yes
+  if args.ours
     targetPath = path.resolve npmRoot, depName
     log.moat 1
     log.white """
@@ -111,21 +231,3 @@ bumpDep = (depName, args, parent) ->
   catch error
      throw error unless /WARN/.test error.message
   return
-
-getLatestVersion = (moduleName, remote) ->
-
-  if remote
-    return exec.sync "npm view #{moduleName} version"
-
-  moduleParent = process.cwd()
-  while moduleParent isnt path.sep
-    modulePath = path.join moduleParent, "node_modules", moduleName
-    break if fs.isDir modulePath
-    moduleParent = path.dirname moduleParent
-
-  modulePath ?= path.join npmRoot, moduleName
-  jsonPath = path.join modulePath, "package.json"
-  return if not fs.isFile jsonPath
-
-  json = JSON.parse fs.read jsonPath
-  return json.version
