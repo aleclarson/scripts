@@ -13,24 +13,8 @@ fs = require "io/sync"
 # Currently only supports *.coffee modules that use
 # the "coffee-build" module in their postinstall phase.
 module.exports = (args) ->
-
   modulePath = path.resolve args._[0] or ""
   updateModule modulePath
-
-  #
-  # else
-  #   files = fs.readDir process.cwd()
-  #   tasks = AsyncTaskGroup {maxConcurrent: 1}
-  #   tasks.map files, (moduleName) ->
-  #     modulePath = path.resolve moduleName
-  #     return unless git.isRepo modulePath
-  #     return unless fs.exists modulePath + "/package.json"
-  #     pjson = require modulePath + "/package.json"
-  #     return unless scripts = pjson.scripts
-  #     return unless scripts.build?.startsWith "coffee-build"
-  #     log.moat 1
-  #     log.yellow moduleName
-  #     log.moat 1
 
 #
 # Internal helpers
