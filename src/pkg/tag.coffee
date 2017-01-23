@@ -82,3 +82,11 @@ updatePackageTag = (modulePath, args) ->
   # 12. End up on the 'unstable' branch.
   .then ->
     git.setBranch modulePath, "unstable"
+
+  # 13. Update the 'dist' branch. (optional)
+  .then ->
+    return unless args.publish
+    publish = require "./publish"
+    moduleName = path.basename modulePath
+    process.chdir modulePath.slice 0, modulePath.length - moduleName.length
+    publish _: [moduleName]
