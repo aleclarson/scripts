@@ -1,8 +1,7 @@
 
 sortObject = require "sortObject"
-semver = require "semver"
+semver = require "node-semver"
 prompt = require "prompt"
-steal = require "steal"
 path = require "path"
 exec = require "exec"
 git = require "git-utils"
@@ -10,10 +9,9 @@ fs = require "io/sync"
 
 npmRoot = exec.sync "npm root -g"
 
-module.exports = (args) ->
+module.exports = (depNames, args) ->
 
-  depNames = steal args, "_"
-  unless depNames and depNames.length
+  unless depNames.length
     return log.warn "Must specify at least one dependency name!"
 
   if args.v?
@@ -24,7 +22,7 @@ module.exports = (args) ->
     unless semver.valid(args.v) or semver.validRange(args.v)
       return log.warn "Malformed version: '#{args.v}'"
 
-  if args.all
+  if args.scan
   then updateDependingPackages depNames, args
   else updateCurrentPackage depNames, args
 

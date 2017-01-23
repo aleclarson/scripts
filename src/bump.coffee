@@ -1,27 +1,27 @@
 
-semver = require "semver"
+semver = require "node-semver"
 path = require "path"
 git = require "git-utils"
 fs = require "io/sync"
 
+bumpDependencies = require "./utils/bumpDependencies"
+
 module.exports = (args) ->
+  depNames = args._
+  if depNames.length
+  then bumpDependencies depNames, args
+  else bumpCurrentPackage args
 
-  moduleName = args._[0]
-  modulePath =
-    if moduleName
-    then path.resolve moduleName
-    else process.cwd()
-
-  jsonPath = path.join modulePath, "package.json"
+bumpCurrentPackage = (args) ->
+  modulePath = process.cwd()
+  jsonPath = path.resolve "package.json"
   json = require jsonPath
 
   version = args.v or
     semver.inc json.version,
-      if args.m or args.minor
-      then "minor"
-      else if args.p or args.patch
-      then "patch"
-      else "major"
+      if args.minor then "minor"
+      else if args.major then "major"
+      else "patch"
 
   log.moat 1
   log.gray json.version
