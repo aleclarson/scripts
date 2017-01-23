@@ -34,7 +34,6 @@
     "semver": "^5.3.0",
     "sortObject": "aleclarson/sortObject#1.0.1",
     "sorted-array": "aleclarson/sorted-array#2.0.1",
-    "steal": "aleclarson/steal#1.2.0",
     "sync": "aleclarson/sync#1.0.1"
   },
   "implicitDependencies": [
