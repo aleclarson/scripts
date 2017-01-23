@@ -65,7 +65,7 @@ updatePackageTag = (modulePath, args) ->
         log.white "Updating tag: "
         log.green nextVersion
         log.moat 1
-        return git.resetBranch modulePath, "HEAD^"
+        return git.revert modulePath
 
       log.moat 1
       log.white "Creating tag: "
