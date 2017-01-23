@@ -6,7 +6,7 @@ fs = require "io/sync"
 
 module.exports = (args) ->
 
-  if args.all
+  if args.scan
     files = fs.readDir "."
     for file in files
       modulePath = path.resolve file
@@ -21,12 +21,12 @@ printOutdated = (modulePath, args) ->
 
   jsonPath = path.resolve modulePath, "package.json"
   unless fs.exists jsonPath
-    args.all or log.warn "Missing package.json"
+    args.scan or log.warn "Missing package.json"
     return
 
   json = require jsonPath
   unless deps = json.dependencies
-    args.all or log.warn "No dependencies exist"
+    args.scan or log.warn "No dependencies exist"
     return
 
   outdated = []
@@ -42,7 +42,7 @@ printOutdated = (modulePath, args) ->
 
   return unless outdated.length
 
-  if args.all
+  if args.scan
     log.moat 1
     log.white path.basename modulePath
     log.plusIndent 2
@@ -56,7 +56,7 @@ printOutdated = (modulePath, args) ->
     log.yellow latestVersion
     log.moat 1
 
-  if args.all
+  if args.scan
     log.popIndent()
   return
 
