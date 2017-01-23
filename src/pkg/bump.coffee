@@ -1,6 +1,7 @@
 
 semver = require "semver"
 path = require "path"
+git = require "git-utils"
 fs = require "io/sync"
 
 module.exports = (args) ->
@@ -28,11 +29,18 @@ module.exports = (args) ->
   log.green version
   log.moat 1
 
-  readmePath = path.join modulePath, "README.md"
-  readme = fs.read readmePath
-  fs.write readmePath, readme.replace "v#{json.version}", "v#{version}"
+  git.isClean modulePath
+  .then (wasClean) ->
 
-  json.version = version
-  json = JSON.stringify json, null, 2
-  fs.write jsonPath, json + log.ln
-  return
+    readmePath = path.join modulePath, "README.md"
+    readme = fs.read readmePath
+    fs.write readmePath, readme.replace "v#{json.version}", "v#{version}"
+
+    json.version = version
+    json = JSON.stringify json, null, 2
+    fs.write jsonPath, json + log.ln
+
+    return unless wasClean
+    git.stageFiles modulePath, "*"
+    .then -> git.commit modulePath, "Bump to v#{version}"
+    .then -> git.pushBranch modulePath

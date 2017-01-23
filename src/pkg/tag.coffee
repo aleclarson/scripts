@@ -65,7 +65,7 @@ updatePackageTag = (modulePath, args) ->
         log.white "Updating tag: "
         log.green nextVersion
         log.moat 1
-        return git.resetBranch modulePath, "HEAD^"
+        return git.revert modulePath
 
       log.moat 1
       log.white "Creating tag: "
@@ -82,3 +82,11 @@ updatePackageTag = (modulePath, args) ->
   # 12. End up on the 'unstable' branch.
   .then ->
     git.setBranch modulePath, "unstable"
+
+  # 13. Update the 'dist' branch. (optional)
+  .then ->
+    return unless args.publish
+    publish = require "./publish"
+    moduleName = path.basename modulePath
+    process.chdir modulePath.slice 0, modulePath.length - moduleName.length
+    publish _: [moduleName]
