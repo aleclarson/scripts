@@ -10,11 +10,16 @@ git = require "git-utils"
 log = require "log"
 fs = require "io/sync"
 
+updateTag = require "./tag"
+
 # Currently only supports *.coffee modules that use
 # the "coffee-build" module in their postinstall phase.
 module.exports = (args) ->
   modulePath = path.resolve args._[0] or ""
-  updateModule modulePath
+  moduleName = path.basename modulePath
+  process.chdir modulePath.slice 0, modulePath.length - moduleName.length
+  promise = updateTag _: [moduleName]
+  promise?.then -> updateDistBranch modulePath
 
 #
 # Internal helpers
@@ -94,13 +99,19 @@ squashDistBranch = (modulePath) ->
       .then -> git.stageFiles modulePath, "*"
       .then ->
         log.moat 1
-        log.white "Publishing: "
-        log.yellow path.basename modulePath
-        log.green " v" + version
+        log.white "Publishing:"
+        log.moat 0
+        log.plusIndent 2
+        log.gray "module:  "
+        log.green path.basename modulePath
+        log.moat 0
+        log.gray "version: "
+        log.green version
+        log.popIndent()
         log.moat 1
         git.pushVersion modulePath, version, {force: yes}
 
-updateModule = (modulePath) ->
+updateDistBranch = (modulePath) ->
   moduleName = path.basename modulePath
 
   unless fs.isDir modulePath
