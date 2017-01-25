@@ -59,7 +59,9 @@ updateDependingPackage = (moduleName, latestVersions, args) ->
   return no unless fs.isFile jsonPath
 
   updatePackageJson jsonPath, (json) ->
-    return no unless deps = json.dependencies
+    deps = json.dependencies
+    devDeps = json.devDependencies
+    return no unless deps or devDeps
 
     parent = {json, path: modulePath}
     for depName, latestVersion of latestVersions
@@ -165,7 +167,8 @@ parseUsername = (string) ->
 
 bumpDependency = (depName, newVersion, args, parent) ->
 
-  deps = parent.json.dependencies or {}
+  depsKey = if args.dev then "devDependencies" else "dependencies"
+  deps = parent.json[depsKey] or {}
   oldValue = deps[depName]
 
   unless args.remote
@@ -184,7 +187,7 @@ bumpDependency = (depName, newVersion, args, parent) ->
     return
 
   deps[depName] = newValue
-  parent.json.dependencies = sortObject deps
+  parent.json[depsKey] = sortObject deps
 
   unless args.all
     log.moat 1
