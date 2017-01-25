@@ -173,9 +173,9 @@ bumpDependency = (depName, newVersion, args, parent) ->
 
   unless args.remote
     username =
-      if args.ours
-      then exec.sync "git config --get user.name"
-      else parseUsername oldValue
+      if args.ours then exec.sync "git config --get user.name"
+      else if oldValue then parseUsername oldValue
+      else null
 
   newValue =
     if username
