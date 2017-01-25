@@ -12,8 +12,6 @@ fs = require "io/sync"
 
 updateTag = require "./tag"
 
-# Currently only supports *.coffee modules that use
-# the "coffee-build" module in their postinstall phase.
 module.exports = (args) ->
   modulePath = path.resolve args._[0] or ""
   moduleName = path.basename modulePath
@@ -73,14 +71,27 @@ updateGitignore = (modulePath) ->
 
 updatePackageJson = (jsonPath) ->
   pjson = require jsonPath
+
   delete pjson.plugins
   delete pjson.devDependencies
   delete pjson.implicitDependencies
+
+  # Delete postinstall scripts.
   if pjson.scripts
-    delete pjson.scripts.build
+
     delete pjson.scripts.postinstall
+
+    if buildScript = pjson.scripts.build
+
+      # Rebuild *.coffee files (without source maps).
+      if buildScript.startsWith "coffee-build "
+        exec.sync "coffee -cb -o js src", {cwd: path.dirname jsonPath}
+
+      delete pjson.scripts.build
+
     unless hasKeys pjson.scripts
       delete pjson.scripts
+
   pjson = JSON.stringify pjson, null, 2
   fs.write jsonPath, pjson + "\n"
 

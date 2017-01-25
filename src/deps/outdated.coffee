@@ -37,7 +37,8 @@ printOutdated = (modulePath, args) ->
     continue unless verifyVersion version
     latestVersion = fetchLatestVersion dep
     continue unless verifyVersion latestVersion
-    continue unless semver.gt latestVersion, version
+    unless semver.gt version, latestVersion
+      continue unless semver.gt latestVersion, version
     outdated.push {dep, version, latestVersion}
 
   return unless outdated.length
