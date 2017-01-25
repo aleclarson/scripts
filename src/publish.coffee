@@ -78,8 +78,17 @@ updatePackageJson = (jsonPath) ->
 
   # Delete postinstall scripts.
   if pjson.scripts
-    delete pjson.scripts.build
+
     delete pjson.scripts.postinstall
+
+    if buildScript = pjson.scripts.build
+
+      # Rebuild *.coffee files (without source maps).
+      if buildScript.startsWith "coffee-build "
+        exec.sync "coffee -cb -o js src", {cwd: path.dirname jsonPath}
+
+      delete pjson.scripts.build
+
     unless hasKeys pjson.scripts
       delete pjson.scripts
 
