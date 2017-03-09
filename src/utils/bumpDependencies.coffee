@@ -66,7 +66,8 @@ updateDependingPackage = (moduleName, latestVersions, args) ->
     parent = {json, path: modulePath}
     for depName, latestVersion of latestVersions
 
-      oldValue = deps[depName]
+      oldValue = deps[depName] if deps?
+      oldValue = devDeps[depName] if devDeps?
       continue unless oldValue?
 
       unless latestVersion
