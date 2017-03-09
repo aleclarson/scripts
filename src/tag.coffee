@@ -3,6 +3,8 @@ Random = require "random"
 path = require "path"
 git = require "git-utils"
 
+pushBranch = require "./utils/pushBranch"
+
 module.exports = (args) ->
 
   modulePath = path.resolve args._[0] or ""
@@ -77,7 +79,7 @@ updatePackageTag = (modulePath, args) ->
   .then ->
     git.commit modulePath, nextVersion
     .then -> git.addTag modulePath, nextVersion, {force: yes}
-    .then -> git.pushBranch modulePath, {force: yes}
+    .then -> pushBranch modulePath, {force: yes}
 
   # 12. End up on the 'unstable' branch.
   .then ->
