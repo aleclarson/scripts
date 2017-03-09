@@ -49,7 +49,7 @@ module.exports = (args) ->
     json.main ?= "js/index"
     json.plugins = ["lotus-coffee"]
     json.scripts =
-      build: "coffee-build -v 1.11.x -b -o js src"
+      build: "coffee-build -v 1.12.x -b -o js src"
       postinstall: "npm run build"
 
   stabilityLevel =
