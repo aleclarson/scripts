@@ -29,7 +29,7 @@ ensureMasterBranch = (modulePath, options = {}) ->
   .then (isClean) ->
 
     if isClean
-      promise = Promise()
+      promise = Promise.resolve()
 
     else if options.forceClean
       promise = git.resetBranch modulePath, "HEAD", {clean: yes}

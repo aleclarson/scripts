@@ -13,7 +13,7 @@
     "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.0.0",
     "LazyVar": "aleclarson/LazyVar#2.1.1",
     "OneOf": "aleclarson/OneOf#1.0.1",
-    "Promise": "aleclarson/Promise#2.1.1",
+    "Promise": "aleclarson/Promise#2.2.1",
     "PureObject": "aleclarson/PureObject#1.0.1",
     "assertType": "aleclarson/assertType#2.0.1",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
