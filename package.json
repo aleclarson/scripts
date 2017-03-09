@@ -1,0 +1,31 @@
+{
+  "name": "scripts",
+  "version": "3.2.2",
+  "main": "js/index",
+  "dependencies": {
+    "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.0.1",
+    "LazyVar": "aleclarson/LazyVar#2.2.0",
+    "OneOf": "aleclarson/OneOf#1.0.1",
+    "Promise": "aleclarson/Promise#2.2.1",
+    "PureObject": "aleclarson/PureObject#1.0.1",
+    "assertType": "aleclarson/assertType#2.0.1",
+    "emptyFunction": "aleclarson/emptyFunction#1.0.0",
+    "exec": "aleclarson/exec#1.0.1",
+    "finder": "aleclarson/finder#2.0.4",
+    "git-utils": "aleclarson/git-utils#1.1.3",
+    "globby": "aleclarson/globby#4.0.1",
+    "hasKeys": "aleclarson/hasKeys#1.0.0",
+    "io": "aleclarson/io#2.2.1",
+    "isType": "aleclarson/isType#1.0.1",
+    "log": "aleclarson/log#2.2.0",
+    "mergeDefaults": "aleclarson/mergeDefaults#1.0.2",
+    "minimist": "^1.2.0",
+    "node-semver": "5.1.0",
+    "prompt": "aleclarson/prompt#2.1.0",
+    "random": "aleclarson/random#1.0.4",
+    "resolve": "aleclarson/resolve#1.0.0",
+    "semver": "^5.3.0",
+    "sortObject": "aleclarson/sortObject#1.0.2",
+    "sync": "aleclarson/sync#1.0.2"
+  }
+}

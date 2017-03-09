@@ -1,0 +1,9 @@
+node_modules/
+scripts.json
+config.json
+
+src/
+spec/
+**/*.map
+README.md
+LICENSE
