@@ -194,7 +194,7 @@ bumpDependency = (depName, newVersion, args, parent) ->
   deps[depName] = newValue
   parent.json[depsKey] = sortObject deps
 
-  unless args.all
+  unless args.scan
     log.moat 1
     log.white depName
     log.moat 0
