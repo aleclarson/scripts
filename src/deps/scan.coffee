@@ -45,7 +45,7 @@ module.exports = (args) ->
     js = fs.read file
     deps = findRequire.all js
     for dep in deps
-      continue if dep.startsWith "image!"
+      continue if ~dep.indexOf "!"
 
       if dep[0] is "."
         depPath = resolvePath dep, {parent: path.dirname file}
