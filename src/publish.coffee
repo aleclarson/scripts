@@ -55,7 +55,7 @@ createDistBranch = (modulePath) ->
   .then ->
     git.addBranch modulePath, branch
 
-ignoredPaths = ["src/", "spec/", "**/*.map", "README.md", "LICENSE"]
+ignoredPaths = ["src/", "spec/", "**/*.map", "*.md", "LICENSE"]
 updateGitignore = (modulePath) ->
   filePath =  modulePath + "/.gitignore"
   ignored = fs.read(filePath).split "\n"
