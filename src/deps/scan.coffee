@@ -2,6 +2,7 @@
 {resolvePath} = require "resolve"
 
 emptyFunction = require "emptyFunction"
+nodePaths = require "node-paths"
 hasKeys = require "hasKeys"
 Finder = require "finder"
 OneOf = require "OneOf"
@@ -59,9 +60,10 @@ module.exports = (args) ->
       if depParts.length
         dep = depParts[0]
 
-      if explicitDeps[dep] or implicitDeps[dep]
-      then push foundDeps, dep, file
-      else push unexpectedDeps, dep, file
+      unless ~nodePaths.indexOf dep
+        if explicitDeps[dep] or implicitDeps[dep]
+        then push foundDeps, dep, file
+        else push unexpectedDeps, dep, file
 
   unusedDeps = Object.create null
   Object.keys(explicitDeps).forEach (dep) ->
