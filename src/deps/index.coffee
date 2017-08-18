@@ -1,5 +1,6 @@
 
 module.exports =
+  find: -> require "./find"
   install: -> require "./install"
   link: -> require "./link"
   list: -> require "./list"
