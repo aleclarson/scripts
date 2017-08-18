@@ -28,6 +28,7 @@ module.exports = (args) ->
   return if ignored.test json.name
 
   currentDeps = json.dependencies or {}
+  devDeps = json.devDependencies or {}
 
   foundDeps = Object.create null
   missingDeps = Object.create null
@@ -55,7 +56,7 @@ module.exports = (args) ->
       if depParts.length
         dep = depParts[0]
 
-      unless ~nodePaths.indexOf dep
+      unless devDeps[dep] or ~nodePaths.indexOf dep
         if currentDeps[dep]
         then push foundDeps, dep, file
         else push unexpectedDeps, dep, file
