@@ -27,12 +27,7 @@ module.exports = (args) ->
   json = require jsonPath
   return if ignored.test json.name
 
-  explicitDeps = json.dependencies ?= {}
-  implicitDeps = do ->
-    deps = {}
-    if Array.isArray json.implicitDependencies
-      deps[dep] = yes for dep in json.implicitDependencies
-    return deps
+  currentDeps = json.dependencies or {}
 
   foundDeps = Object.create null
   missingDeps = Object.create null
@@ -61,12 +56,12 @@ module.exports = (args) ->
         dep = depParts[0]
 
       unless ~nodePaths.indexOf dep
-        if explicitDeps[dep] or implicitDeps[dep]
+        if currentDeps[dep]
         then push foundDeps, dep, file
         else push unexpectedDeps, dep, file
 
   unusedDeps = Object.create null
-  Object.keys(explicitDeps).forEach (dep) ->
+  Object.keys(currentDeps).forEach (dep) ->
     foundDeps[dep] or unusedDeps[dep] = yes
 
   printDependers = (dep, dependers) ->
