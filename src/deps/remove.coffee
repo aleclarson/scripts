@@ -30,6 +30,12 @@ module.exports = (args) ->
       log.flush()
       fs.remove installedPath
 
+  unless hasKeys deps
+    delete json.dependencies
+
+  unless hasKeys devDeps
+    delete json.devDependencies
+
   json = JSON.stringify json, null, 2
   fs.write jsonPath, json + log.ln
   return
