@@ -1,7 +1,6 @@
 
 require "LazyVar"
 
-AsyncTaskGroup = require "AsyncTaskGroup"
 Promise = require "Promise"
 hasKeys = require "hasKeys"
 path = require "path"
