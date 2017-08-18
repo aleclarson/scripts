@@ -16,9 +16,11 @@ module.exports = (args) ->
 
   json = require jsonPath
   deps = json.dependencies or {}
+  devDeps = json.devDependencies or {}
 
   for dep in args._
     delete deps[dep]
+    delete devDeps[dep]
     installedPath = path.resolve modulePath, "node_modules", dep
     if fs.exists installedPath
       log.moat 1
