@@ -42,6 +42,8 @@ module.exports = (args) ->
   files = glob.sync modulePath + "/**/*.js"
   for file in files
     continue if /\/node_modules\//.test file
+    continue if modulePath isnt findRoot file
+
     js = fs.read file
     deps = findRequire.all js
     for dep in deps
@@ -75,6 +77,16 @@ module.exports = (args) ->
   printResults "Missing relatives: ", missingDeps, printDependers
   printResults "Unexpected absolutes: ", unexpectedDeps, printDependers
   printResults "Unused absolutes: ", unusedDeps
+
+#
+# Helpers
+#
+
+findRoot = (filePath) ->
+  dir = path.dirname filePath
+  while !fs.isFile path.join dir, "package.json"
+    dir = path.dirname dir
+  return dir
 
 printResults = (title, deps, iterator = emptyFunction) ->
 
