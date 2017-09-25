@@ -147,7 +147,7 @@ readVersions = (depNames, args) ->
     return versions
 
   for depName in depNames
-    versions[depName] = getLatestVersion depName, args.remote
+    versions[depName] = getLatestVersion String(depName), args.remote
   return versions
 
 updatePackageJson = (jsonPath, updater) ->
