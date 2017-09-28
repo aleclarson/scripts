@@ -31,7 +31,7 @@ ensureMasterBranch = (modulePath, options = {}) ->
       promise = Promise.resolve()
 
     else if options.forceClean
-      promise = git.resetBranch modulePath, "HEAD", {clean: yes}
+      promise = git.resetBranch modulePath, "HEAD", {hard: true}
 
     else throw Error "is not clean"
 
@@ -103,7 +103,7 @@ squashDistBranch = (modulePath) ->
     .then (version) ->
       if version is null
         throw Error "has no version tag"
-      git.resetBranch modulePath, null
+      git.resetBranch modulePath, null, {soft: true}
       .then -> git.stageFiles modulePath, "*"
       .then -> exec.async "git rm -r --cached .", {cwd: modulePath}
       .then -> git.stageFiles modulePath, "*"

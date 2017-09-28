@@ -37,7 +37,7 @@ updatePackageTag = (modulePath, args) ->
   .then -> git.setBranch modulePath, tmpBranch, {force: yes}
 
   # 4. Combine the commit history for cherry-picking.
-  .then -> git.resetBranch modulePath, null
+  .then -> git.resetBranch modulePath, null, {soft: true}
   .then -> git.commit modulePath, "combine all commits"
 
   # 5. Switch back to the 'master' branch.
@@ -55,7 +55,7 @@ updatePackageTag = (modulePath, args) ->
   .then -> git.deleteBranch modulePath, tmpBranch
 
   # 9. Merge the temporary commits.
-  .then -> git.resetBranch modulePath, "HEAD^^"
+  .then -> git.resetBranch modulePath, "HEAD^^", {soft: true}
 
   # 10. Overwrite any duplicate version.
   .then ->

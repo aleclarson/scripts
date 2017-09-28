@@ -57,7 +57,7 @@ module.exports = (args) ->
 
     .fail (error) ->
 
-      repo.resetBranch "HEAD^"
+      repo.resetBranch "HEAD^", {soft: true}
       .then ->
 
         if error.message is "Must force push to overwrite remote commits!"
