@@ -44,4 +44,4 @@ bumpCurrentPackage = (args) ->
     return unless wasClean
     git.stageFiles modulePath, "*"
     .then -> git.commit modulePath, "Bump to v#{version}"
-    .then -> pushBranch modulePath, {force: yes}
+    .then -> pushBranch modulePath, {force: true}

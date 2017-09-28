@@ -48,9 +48,9 @@ module.exports = (args) ->
     sorted = sortModules outdated, ({json}) ->
       for dep, _ of json.dependencies
         continue if not outdated[dep]
-        return no if not sortedKeys[dep]
-      sortedKeys[json.name] = yes
-      return yes
+        return false if not sortedKeys[dep]
+      sortedKeys[json.name] = true
+      return true
 
     sorted.forEach ({json}) ->
       log.moat 1

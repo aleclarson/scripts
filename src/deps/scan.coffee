@@ -65,7 +65,7 @@ module.exports = (args) ->
 
   unusedDeps = Object.create null
   Object.keys(currentDeps).forEach (dep) ->
-    foundDeps[dep] or unusedDeps[dep] = yes
+    foundDeps[dep] or unusedDeps[dep] = true
 
   printDependers = (dep, dependers) ->
     log.plusIndent 2

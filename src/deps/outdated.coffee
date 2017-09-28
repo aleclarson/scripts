@@ -71,9 +71,9 @@ latestVersions = Object.create null
 
 verifyVersion = (version) ->
   if version
-    return yes if semver.valid version
-    return yes if semver.validRange version
-  return no
+    return true if semver.valid version
+    return true if semver.validRange version
+  return false
 
 fetchLatestVersion = (moduleName) ->
   return version if version = latestVersions[moduleName]

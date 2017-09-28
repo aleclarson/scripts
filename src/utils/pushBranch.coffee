@@ -21,14 +21,14 @@ module.exports = (modulePath, options = {}) ->
     log.yellow options.remote + "/unstable"
     log.gray " be the upstream branch? "
 
-    prompt.async {bool: yes}
+    prompt.async {bool: true}
     .then (setUpstream) ->
       log.moat 1
 
       unless setUpstream
         throw Error "Cannot push local branch without an upstream branch!"
 
-      options.upstream = yes
+      options.upstream = true
       return git.pushBranch modulePath, options
 
 upstreamError = /The current branch [^\s]+ has no upstream branch/

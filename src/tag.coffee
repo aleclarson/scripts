@@ -34,7 +34,7 @@ updatePackageTag = (modulePath, args) ->
     nextVersion = require(jsonPath).version
 
   # 3. Clone it into a temporary branch.
-  .then -> git.setBranch modulePath, tmpBranch, {force: yes}
+  .then -> git.setBranch modulePath, tmpBranch, {force: true}
 
   # 4. Combine the commit history for cherry-picking.
   .then -> git.resetBranch modulePath, null, {soft: true}
@@ -78,8 +78,8 @@ updatePackageTag = (modulePath, args) ->
   # 11. Update the 'master' branch.
   .then ->
     git.commit modulePath, nextVersion
-    .then -> git.addTag modulePath, nextVersion, {force: yes}
-    .then -> pushBranch modulePath, {force: yes}
+    .then -> git.addTag modulePath, nextVersion, {force: true}
+    .then -> pushBranch modulePath, {force: true}
 
   # 12. End up on the 'unstable' branch.
   .then ->

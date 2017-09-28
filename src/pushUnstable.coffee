@@ -44,7 +44,7 @@ module.exports = (args) ->
 
       repo.getHead currentBranch,
         remote: options.remote
-        message: yes
+        message: true
 
       .then (commit) ->
         log.moat 1

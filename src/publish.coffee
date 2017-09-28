@@ -119,7 +119,7 @@ squashDistBranch = (modulePath) ->
         log.green version
         log.popIndent()
         log.moat 1
-        git.pushVersion modulePath, version, {force: yes}
+        git.pushVersion modulePath, version, {force: true}
 
 updateDistBranch = (modulePath) ->
   moduleName = path.basename modulePath
@@ -145,7 +145,7 @@ updateDistBranch = (modulePath) ->
     .then -> updateGitignore modulePath
     .then -> updatePackageJson jsonPath
     .then -> squashDistBranch modulePath
-    .then -> ensureMasterBranch modulePath, {forceClean: yes}
+    .then -> ensureMasterBranch modulePath, {forceClean: true}
 
   # End on the 'unstable' branch.
   .then ->

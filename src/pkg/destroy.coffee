@@ -19,7 +19,7 @@ module.exports = (args) ->
   log.white moduleName
   log.moat 1
   log.gray "Are you sure?"
-  shouldDestroy = prompt.sync {bool: yes}
+  shouldDestroy = prompt.sync {bool: true}
   log.moat 1
   return unless shouldDestroy
 

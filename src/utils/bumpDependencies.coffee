@@ -56,12 +56,12 @@ missingVersions = {}
 updateDependingPackage = (moduleName, latestVersions, args) ->
   modulePath = path.resolve moduleName
   jsonPath = path.join modulePath, "package.json"
-  return no unless fs.isFile jsonPath
+  return false unless fs.isFile jsonPath
 
   updatePackageJson jsonPath, (json) ->
     deps = json.dependencies
     devDeps = json.devDependencies
-    return no unless deps or devDeps
+    return false unless deps or devDeps
 
     parent = {json, path: modulePath}
     for depName, latestVersion of latestVersions
@@ -76,7 +76,7 @@ updateDependingPackage = (moduleName, latestVersions, args) ->
 
       unless latestVersion
         unless missingVersions[depName]
-          missingVersions[depName] = yes
+          missingVersions[depName] = true
           log.warn "Missing version: '#{depName}'"
         continue
 
@@ -99,23 +99,23 @@ updateDependingPackage = (moduleName, latestVersions, args) ->
         log.gray "auto-bumping: "
         log.green latestVersion
         log.moat 1
-        shouldBump = yes
+        shouldBump = true
 
       else
         log.gray "latest:  "
         log.green latestVersion
         log.moat 1
-        shouldBump = prompt.sync {bool: yes}
+        shouldBump = prompt.sync {bool: true}
 
       log.popIndent()
 
       if shouldBump is null
-        return yes
+        return true
 
       if shouldBump
         bumpDependency depName, latestVersion, args, parent
 
-    return no
+    return false
 
 #
 # Internal helpers
