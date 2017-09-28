@@ -45,7 +45,7 @@ updatePackageTag = (modulePath, args) ->
     git.setBranch modulePath, "master"
 
     # 6. Delete all files in 'master' branch for easier cherry-picking.
-    .then -> git.deleteFile modulePath, "*", {force: yes}
+    .then -> git.remove modulePath, "*", {force: true}
     .then -> git.commit modulePath, "delete all files"
 
     # 7. Cherry-pick the temporary commit.
