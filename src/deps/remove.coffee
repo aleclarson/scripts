@@ -21,7 +21,7 @@ module.exports = (args) ->
   for dep in args._
     delete deps[dep]
     delete devDeps[dep]
-    installedPath = path.resolve modulePath, "node_modules", dep
+    installedPath = path.resolve modulePath, "node_modules", String dep
     if fs.exists installedPath
       log.moat 1
       log.red "Removing: "
