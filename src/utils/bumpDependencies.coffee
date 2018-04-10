@@ -209,8 +209,8 @@ bumpDependency = (depName, newVersion, args, parent) ->
 
   {green, yellow} = log.color
 
-  if args.ours
-    targetPath = path.resolve npmRoot, depName
+  targetPath = path.resolve npmRoot, depName
+  if fs.exists targetPath
     log.moat 1
     log.white """
       Creating symlink..
