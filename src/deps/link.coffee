@@ -119,12 +119,14 @@ createLocalLinks = (modulePath, args) ->
       log.warn "Cannot resolve dependency: #{green name} #{yellow version}"
       continue
 
+    linkPath = path.join modulePath, "node_modules", name
     globalPath = path.join npmRoot, name
+
     unless fs.exists globalPath
-      log.warn "Global dependency does not exist: #{green globalPath}"
+      unless fs.exists linkPath
+        log.warn "Global dependency does not exist: #{green globalPath}"
       continue
 
-    linkPath = path.join modulePath, "node_modules", name
     if fs.exists linkPath
       continue unless fs.isLink linkPath
       continue unless fs.isLinkBroken linkPath
