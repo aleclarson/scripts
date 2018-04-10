@@ -35,8 +35,5 @@
   "scripts": {
     "build": "coffee-build -o js src",
     "prepublishOnly": "prepv -i || true"
-  },
-  "implicitDependencies": [
-    "path"
-  ]
+  }
 }
