@@ -40,6 +40,21 @@ createLink = (linkPath, targetPath, args) ->
       log.warn "'linkPath' already exists:\n  #{linkPath}"
       return
 
+  # Symlink all children of the linked directory.
+  if args.hard
+    log.moat 1
+    log.white """
+      Hard linking: #{green linkPath}
+           to path: #{yellow targetPath}
+    """
+    log.moat 1
+    fs.writeDir linkPath
+    fs.readDir(targetPath).forEach (name) ->
+      return if /^\.git/.test name
+      filePath = path.join targetPath, name
+      fs.writeLink path.join(linkPath, name), filePath
+    return
+
   log.moat 1
   log.white """
     Creating symlink..
