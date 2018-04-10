@@ -1,6 +1,6 @@
 
 sortObject = require "sortObject"
-semver = require "node-semver"
+semver = require "semver"
 prompt = require "prompt"
 path = require "path"
 exec = require "exec"

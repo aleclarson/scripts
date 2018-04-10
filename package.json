@@ -3,7 +3,7 @@
   "version": "3.3.0",
   "main": "js/index",
   "dependencies": {
-    "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.0.1",
+    "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.1.0",
     "LazyVar": "aleclarson/LazyVar#2.2.1",
     "OneOf": "aleclarson/OneOf#1.1.0",
     "Promise": "aleclarson/Promise#2.2.5",
@@ -22,7 +22,7 @@
     "mergeDefaults": "aleclarson/mergeDefaults#1.1.0",
     "minimist": "^1.2.0",
     "node-paths": "aleclarson/node-paths#1.0.0",
-    "node-semver": "5.1.0",
+    "semver": "5.5.0",
     "prompt": "aleclarson/prompt#2.1.0",
     "random": "aleclarson/random#1.0.4",
     "resolve": "aleclarson/resolve#1.0.0",
