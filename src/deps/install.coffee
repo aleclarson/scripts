@@ -15,7 +15,7 @@ module.exports = (args) ->
   if fs.exists manifestPath
     manifest = require manifestPath
   else
-    log.warn "'install-deps' uses the manifest, please call 'read-deps' first!"
+    log.warn "`deps install` uses the manifest, please call `deps list` first!"
     return
 
   sync.each manifest, (depJson, depPath) ->
