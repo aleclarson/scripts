@@ -37,9 +37,8 @@ printOutdated = (modulePath, args) ->
     continue unless verifyVersion version
     latestVersion = fetchLatestVersion dep
     continue unless verifyVersion latestVersion
-    unless semver.gt version, latestVersion
-      continue unless semver.gt latestVersion, version
-    outdated.push {dep, version, latestVersion}
+    if semver.gt latestVersion, version
+      outdated.push {dep, version, latestVersion}
 
   return unless outdated.length
 
@@ -70,10 +69,7 @@ npmRoot = exec.sync "npm root -g"
 latestVersions = Object.create null
 
 verifyVersion = (version) ->
-  if version
-    return true if semver.valid version
-    return true if semver.validRange version
-  return false
+  !!(version and semver.valid version)
 
 fetchLatestVersion = (moduleName) ->
   return version if version = latestVersions[moduleName]
