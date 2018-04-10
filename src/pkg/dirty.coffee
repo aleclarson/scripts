@@ -22,14 +22,15 @@ module.exports = (args) ->
   mods = readModules process.cwd(), (file, json) ->
     git.isRepo(file) and not ignored.test(json.name)
 
-  tasks = AsyncTaskGroup {maxConcurrent: 20}
-  tasks.map Object.keys(mods), (name) ->
+  tasks = new AsyncTaskGroup 20, (name) ->
     {file, json} = mods[name]
-    git.isClean file
-    .then (isClean) ->
-      isClean or dirty[name] = {file, json}
+    isClean = await git.isClean file
+    unless isClean
+      dirty[name] = {file, json}
+      return
 
-  .then ->
+  tasks.concat Object.keys mods
+  tasks.then ->
     log.moat 1
     log.gray "Sorting modules..."
     log.moat 1

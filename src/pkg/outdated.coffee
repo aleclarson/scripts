@@ -23,22 +23,21 @@ module.exports = (args) ->
   mods = readModules process.cwd(), (file, json) ->
     git.isRepo(file) and not ignored.test(json.name)
 
-  tasks = AsyncTaskGroup {maxConcurrent: 20}
-  tasks.map Object.keys(mods), (name) ->
+  tasks = new AsyncTaskGroup 20, (name) ->
     {file, json} = mods[name]
 
-    Promise.all [
-      git.isClean file
-      git.hasBranch file, "unstable"
-    ]
-    .then ([ isClean, hasBranch ]) ->
-      return unless isClean and hasBranch
-      exec.async "git diff --name-status master unstable", cwd: file
-      .then (stdout) ->
-        return if stdout.length is 0
-        outdated[name] = {file, json}
+    isClean = await git.isClean file
+    hasBranch = await git.hasBranch file, "unstable"
+    return unless isClean and hasBranch
 
-  .then ->
+    cmd = "git diff --name-status master unstable"
+    stdout = await exec.async cmd, cwd: file
+    if stdout.length
+      outdated[name] = {file, json}
+      return
+
+  tasks.concat Object.keys mods
+  tasks.then ->
     log.moat 1
     log.gray "Sorting modules..."
     log.moat 1
