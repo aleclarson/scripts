@@ -7,16 +7,20 @@ readModules = require "../utils/readModules"
 
 module.exports = (args) ->
   moduleName = args._.shift()
+  key =
+    if args.dev
+    then "devDependencies"
+    else "dependencies"
 
-  deps = Object.create null
+  res = Object.create null
   mods = readModules process.cwd()
   for name, mod of mods
-    {dependencies} = mod.json
-    continue unless dependencies
-    if version = dependencies[moduleName]
+    deps = mod.json[key]
+    continue unless deps
+    if version = deps[moduleName]
       if 0 <= version.indexOf "#"
         version = version.split("#").pop()
-      deps[name] = version
+      res[name] = version
 
   log.moat 1
   log.white "Modules that depend on "
@@ -24,12 +28,12 @@ module.exports = (args) ->
   log.moat 1
   log.plusIndent 2
 
-  unless hasKeys deps
+  unless hasKeys res
     log.gray "No modules were found."
     log.moat 1
     return
 
-  for name, version of deps
+  for name, version of res
     log.white name + " "
     log.yellow version
     log.moat 1
