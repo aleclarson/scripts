@@ -225,15 +225,20 @@ bumpDependency = (depName, newVersion, args, parent) ->
     fs.writeLink depPath, targetPath
     return
 
+  installName =
+    if username
+    then newValue
+    else depName
+
   log.moat 1
   log.white """
     Installing:
-      #{green depPath}
+      #{green installName}
   """
   log.moat 1
   log.flush()
 
-  try exec.sync "npm install #{depPath}", cwd: parent.path
+  try exec.sync "npm install #{installName}", cwd: parent.path
   catch error
      throw error unless /WARN/.test error.message
   return
