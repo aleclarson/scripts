@@ -185,7 +185,7 @@ bumpDependency = (depName, newVersion, args, parent) ->
   newValue =
     if username
     then username + "/" + depName + "#" + newVersion
-    else newVersion
+    else "^" + newVersion
 
   if newValue is oldValue
     log.warn "#{depName} v#{newVersion} is already installed!"
