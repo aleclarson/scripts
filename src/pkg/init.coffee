@@ -47,10 +47,9 @@ module.exports = (args) ->
   if args.c or args.coffee
     ignoredPaths.push "js/"
     json.main ?= "js/index"
-    json.plugins = ["lotus-coffee"]
     json.scripts =
-      build: "coffee-build -v 1.12.x -b -o js src"
-      postinstall: "npm run build"
+      build: "coffee-build -o js src"
+      prepublishOnly: "prepv -i || true"
 
   stabilityLevel =
     if stability = args.s or args.stability
