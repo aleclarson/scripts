@@ -50,6 +50,9 @@ module.exports = (args) ->
     json.scripts =
       build: "coffee-build src -o js"
       prepublishOnly: "prepv -i || true"
+    json.devDependencies =
+      "coffeescript": "^2.3.0"
+      "wch-coffee": "*"
 
   stabilityLevel =
     if stability = args.s or args.stability
