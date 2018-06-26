@@ -33,7 +33,7 @@
     "coffeescript": "^2.2.3"
   },
   "scripts": {
-    "build": "coffee-build -o js src",
+    "build": "coffee-build src -o js",
     "prepublishOnly": "prepv -i || true"
   }
 }

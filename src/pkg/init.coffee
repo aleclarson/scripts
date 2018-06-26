@@ -48,7 +48,7 @@ module.exports = (args) ->
     ignoredPaths.push "js/"
     json.main ?= "js/index"
     json.scripts =
-      build: "coffee-build -o js src"
+      build: "coffee-build src -o js"
       prepublishOnly: "prepv -i || true"
 
   stabilityLevel =
