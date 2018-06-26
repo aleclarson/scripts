@@ -76,16 +76,14 @@ createLocalLink = (modulePath, args) ->
 
 createGlobalLink = (modulePath, args) ->
 
-  moduleName = path.basename modulePath
-  linkPath = path.join npmRoot, moduleName
-  createLink linkPath, modulePath, args
-
   jsonPath = path.join modulePath, "package.json"
   return unless fs.isFile jsonPath
 
   json = require jsonPath
-  return unless isType json.bin, Object
+  linkPath = path.join npmRoot, json.name
+  createLink linkPath, modulePath, args
 
+  return unless isType json.bin, Object
   for scriptName, scriptPath of json.bin
     scriptPath = path.resolve modulePath, scriptPath
     binPath = path.join npmBin, scriptName
