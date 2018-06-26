@@ -92,6 +92,15 @@ module.exports = (args) ->
   fs.write ignorePath, ignoredPaths.join log.ln
   log.it "Creating file: '#{ignorePath}'"
 
+  if args.c or args.coffee
+    ignorePath = path.join modulePath, ".npmignore"
+    log.it "Creating file: '#{ignorePath}'"
+    fs.write ignorePath, """
+      !/js/
+      /src/
+      /spec/
+    """
+
   licensePath = path.join modulePath, "LICENSE"
   licenseTemplatePath = path.resolve __dirname, "../../templates/LICENSE"
   fs.write licensePath, fs.read licenseTemplatePath
