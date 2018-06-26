@@ -42,10 +42,10 @@ module.exports = (args) ->
     log.warn "--main must provide a string!"
     return
 
-  ignoredPaths = ["node_modules/"]
+  ignoredPaths = ["/node_modules/"]
 
   if args.c or args.coffee
-    ignoredPaths.push "js/"
+    ignoredPaths.push "/js/"
     json.main ?= "js/index"
     json.scripts =
       build: "coffee-build src -o js"
