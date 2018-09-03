@@ -8,9 +8,13 @@ bumpDependencies = require "./utils/bumpDependencies"
 pushBranch = require "./utils/pushBranch"
 
 module.exports = (args) ->
-  depNames = args._
-  if depNames.length
-  then bumpDependencies depNames, args
+
+  if args._.length
+    bumpDependencies args._,
+      all: args.A or args.all
+      dev: args.D or args.dev
+      releaseType: (args.p and "patch") or (args.m and "minor") or (args.M and "major")
+
   else bumpCurrentPackage args
 
 bumpCurrentPackage = (args) ->

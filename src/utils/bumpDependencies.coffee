@@ -7,238 +7,305 @@ exec = require "exec"
 git = require "git-utils"
 fs = require "io/sync"
 
-npmRoot = exec.sync "npm root -g"
+globalSearchPaths = process.env.NODE_PATH
+  .split(":").filter path.isAbsolute
 
-module.exports = (depNames, args) ->
+module.exports = (input, opts) ->
 
-  unless depNames.length
-    return log.warn "Must specify at least one dependency name!"
+  unless input.length
+    return log.warn "Must provide at least one dependency!"
 
-  if args.v?
+  deps = input.map parseDependency
+  prop = if opts.dev then "devDependencies" else "dependencies"
 
-    if depNames.length > 1
-      return log.warn "Cannot specify -v when updating multiple dependencies!"
+  for cwd from yieldPackages(opts)
+    packPath = cwd + "/package.json"
+    pack = readJson packPath
 
-    unless semver.valid(args.v) or semver.validRange(args.v)
-      return log.warn "Malformed version: '#{args.v}'"
+    # `opts.all` only cares about upgrading
+    continue if opts.all and !pack[prop]
+    pack[prop] or= {}
 
-  if args.scan
-  then updateDependingPackages depNames, args
-  else updateCurrentPackage depNames, args
+    addCount = 0
+    upgradeCount = 0
 
-updateCurrentPackage = (depNames, args) ->
+    for dep, idx in deps when dep?
+      name = dep.alias or dep.name
+      oldValue = pack[prop][name]
 
-  jsonPath = path.resolve "package.json"
-  unless fs.isFile jsonPath
-    log.warn "Missing json: '#{jsonPath}'"
-    return
+      # `opts.all` only cares about upgrading
+      continue if opts.all and !oldValue
 
-  latestVersions = readVersions depNames, args
-  updatePackageJson jsonPath, (json) ->
-    parent = {json, path: path.dirname jsonPath}
-    for depName, latestVersion of latestVersions
-      if latestVersion
-      then bumpDependency depName, latestVersion, args, parent
-      else log.warn "Missing version: '#{depName}'"
-    return
+      # Parse metadata from the old value.
+      oldProps = oldValue and parseVersion oldValue
 
-updateDependingPackages = (depNames, args) ->
-  latestVersions = readVersions depNames, args
-  moduleNames = fs.readDir "."
-  for moduleName in moduleNames
-    cancelled =
-      updateDependingPackage moduleName, latestVersions, args
-    return if cancelled
-  return
+      # Use the exact old version.
+      linkPath = cwd + "/node_modules/" + name
+      if oldProps and fs.exists linkPath + "/package.json"
+        oldProps.version = JSON.parse(fs.read linkPath + "/package.json").version
 
-missingVersions = {}
+      # Reset local variables.
+      newValue = newVersion = globalPath = null
 
-updateDependingPackage = (moduleName, latestVersions, args) ->
-  modulePath = path.resolve moduleName
-  jsonPath = path.join modulePath, "package.json"
-  return false unless fs.isFile jsonPath
+      # Git deps are used as-is
+      if dep.site != "npm"
+        newValue = input[idx]
 
-  updatePackageJson jsonPath, (json) ->
-    deps = json.dependencies
-    devDeps = json.devDependencies
-    return false unless deps or devDeps
+        # Git deps may be globally installed with `pnpm`
+        dep.tag and globalPath = searchGlobalPaths ".github.com/#{dep.scope}/#{dep.name}/" + dep.tag
 
-    parent = {json, path: modulePath}
-    for depName, latestVersion of latestVersions
+      # Use `opts.releaseType` when a previous version exists and no version was given.
+      if opts.releaseType and oldProps and !(dep.version or dep.tag)
+        # Git tags and aliases cannot be safely bumped.
+        if !oldProps.tag and !dep.alias
+          dep.version = makeSemverRange oldProps.version, opts.releaseType
 
-      if deps?
-        oldValue = deps[depName]
+      # Find the first global package with the desired name.
+      if !newValue and (globalPath = searchGlobalPaths dep.name + "/package.json")
 
-      if devDeps? and not oldValue
-        oldValue = devDeps[depName]
+        # Sanity check on global package.json
+        if !newVersion = readJson(globalPath).version
+          log.warn "Global package has no version: '#{globalPath}'"
+          continue
 
-      continue unless oldValue
+        # The global package must satisfy the desired version.
+        globalPath =
+          if !dep.version or semver.satisfies newVersion, dep.version
+          then path.dirname globalPath
+          else null
 
-      unless latestVersion
-        unless missingVersions[depName]
-          missingVersions[depName] = true
-          log.warn "Missing version: '#{depName}'"
+      # The `pnpm-global` folder may have the desired version.
+      if dep.version and !globalPath
+        {path: globalPath, version: newVersion} = pnpmSearch dep
+
+      if !globalPath
+        if !newValue
+          newValue = dep.name
+          newValue += "@" + dep.version if dep.version
+        log.warn "Global package matching '#{newValue}' not found"
         continue
 
-      oldVersion = parseVersion oldValue
-      continue if semver.gte oldVersion, latestVersion
+      # Ensure the dependency value exists.
+      if !newValue
 
-      diff = semver.diff oldVersion, latestVersion
-      continue if args.only? and diff isnt args.only
+        newVersion or= dep.version
+        if semver.valid newVersion
+          newVersion = "^" + newVersion
 
-      log.moat 1
-      log.yellow moduleName
-      log.moat 0
-      log.plusIndent 2
-      log.gray "current: "
-      log.white oldVersion
-      log.moat 0
+        newValue =
+          if dep.alias
+          then dep.site + ":" + dep.name + "@" + newVersion
+          else newVersion
 
-      # Auto-bump patch versions.
-      if diff is "patch"
-        log.gray "auto-bumping: "
-        log.green latestVersion
+      # Update an existing symlink or create one.
+      if fs.isLink linkPath
+        fs.remove linkPath
+
+      # The user must manually delete real directories and files.
+      else if fs.exists linkPath
+        log.warn "Cannot overwrite non-link dependency: '#{linkPath}'"
+        continue
+
+      fs.writeDir path.dirname linkPath
+      fs.writeLink linkPath, globalPath
+
+      # Apply the change if necessary.
+      if newValue != oldValue
+        pack[prop][name] = newValue
+        if oldValue then upgradeCount++ else addCount++
+
+        displayName =
+          if dep.scope?[0] != "@"
+          then dep.scope + "/" + dep.name
+          else dep.name
+
         log.moat 1
-        shouldBump = true
-
-      else
-        log.gray "latest:  "
-        log.green latestVersion
+        log.white displayName
+        if dep.alias
+          log.gray " as "
+          log.white dep.alias
+        log.moat 0
+        log.plusIndent 2
+        if oldValue
+          log.gray oldProps.version or oldValue
+          log.white " -> "
+        log.green newVersion or newValue
+        log.popIndent()
         log.moat 1
-        shouldBump = prompt.sync {bool: true}
 
-      log.popIndent()
+    # Sort the dependencies if some were added.
+    if addCount
+      pack[prop] = sortObject pack[prop]
 
-      if shouldBump is null
-        return true
-
-      if shouldBump
-        bumpDependency depName, latestVersion, args, parent
-
-    return false
+    # Save the package.json if changes were made.
+    if addCount or upgradeCount
+      writeJson packPath, pack
+      return
 
 #
-# Internal helpers
+# Helpers
 #
 
-getLatestVersion = (moduleName, isRemote) ->
+pnpmSearch = (dep) ->
+  versionDir = searchGlobalPaths ".registry.npmjs.org/" + dep.name
+  if versionDir and (version = semver.maxSatisfying fs.readDir(versionDir), dep.version)
+    {path: path.join(versionDir, version, "node_modules", dep.name), version}
+  else {path: null, version: null}
 
-  if isRemote
-    return exec.sync "npm view #{moduleName} version"
+makeSemverRange = (version, releaseType) ->
+  {major, minor, patch} = semver.coerce version
+  switch releaseType
+    when "patch" then "~#{major}.#{minor}.#{patch + 1}"
+    when "minor" then "^#{major}.#{minor + 1}"
+    when "major" then String major + 1
 
-  moduleParent = process.cwd()
-  while moduleParent isnt path.sep
-    modulePath = path.join moduleParent, "node_modules", moduleName
-    break if fs.isDir modulePath
-    moduleParent = path.dirname moduleParent
+# Search NODE_PATH for a matching package
+searchGlobalPaths = (name) ->
+  for searchPath in globalSearchPaths
+    searchPath = path.join searchPath, name
+    return searchPath if fs.exists searchPath
 
-  modulePath ?= path.join npmRoot, moduleName
-  jsonPath = path.join modulePath, "package.json"
-  return unless fs.isFile jsonPath
+# When `opts.all` is true, all packages in the working directory are yielded.
+# Otherwise, the working directory is returned.
+yieldPackages = (opts) ->
+  cwd = process.cwd()
 
-  json = JSON.parse fs.read jsonPath
-  return json.version
-
-readVersions = (depNames, args) ->
-  versions = {}
-
-  if args.v?
-    versions[depNames[0]] = args.v
-    return versions
-
-  for depName in depNames
-    versions[depName] = getLatestVersion String(depName), args.remote
-  return versions
-
-updatePackageJson = (jsonPath, updater) ->
-  json = JSON.parse fs.read jsonPath
-  result = updater json
-  json = JSON.stringify json, null, 2
-  fs.write jsonPath, json + log.ln
-  return result
-
-parseVersion = (string) ->
-  if 0 <= string.indexOf "#"
-    return string.split("#")[1]
-  return string
-
-parseUsername = (string) ->
-  parts = string.split "/"
-  if 0 <= string.indexOf "://"
-    parts = parts.splice -2
-  if parts.length > 1
-    return parts.shift()
-  return null
-
-bumpDependency = (depName, newVersion, args, parent) ->
-
-  depsKey = if args.dev then "devDependencies" else "dependencies"
-  deps = parent.json[depsKey] or {}
-  oldValue = deps[depName]
-
-  unless args.remote
-    username =
-      if args.ours then exec.sync "git config --get user.name"
-      else if oldValue then parseUsername oldValue
-      else null
-
-  newValue =
-    if username
-    then username + "/" + depName + "#" + newVersion
-    else "^" + newVersion
-
-  if newValue is oldValue
-    log.warn "#{depName} v#{newVersion} is already installed!"
+  if opts.all
+    for dir in fs.readDir cwd
+      dir = cwd + "/" + dir
+      yield dir if fs.isFile dir + "/package.json"
     return
 
-  deps[depName] = newValue
-  parent.json[depsKey] = sortObject deps
-
-  unless args.scan
-    log.moat 1
-    log.white depName
-    log.moat 0
-    if oldValue
-      log.gray parseVersion oldValue
-      log.white " -> "
-    log.green newVersion
-    log.moat 1
-
-  depPath = path.resolve parent.path, "node_modules", depName
-  return if fs.exists depPath
-
-  {green, yellow} = log.color
-
-  targetPath = path.resolve npmRoot, depName
-  if fs.exists targetPath
-    log.moat 1
-    log.white """
-      Creating symlink..
-        #{green depPath}
-      ..that points to:
-        #{yellow targetPath}
-    """
-    log.moat 1
-    log.flush()
-
-    fs.writeDir path.dirname depPath
-    fs.writeLink depPath, targetPath
+  if !fs.isFile cwd + "/package.json"
+    log.warn "Current directory is not a package!"
     return
 
-  installName =
-    if username
-    then newValue
-    else depName
+  yield cwd
 
-  log.moat 1
-  log.white """
-    Installing:
-      #{green installName}
-  """
-  log.moat 1
-  log.flush()
+# Parse metadata from a dependency string
+parseDependency = (input) ->
 
-  try exec.sync "npm install #{installName}", cwd: parent.path
-  catch error
-     throw error unless /WARN/.test error.message
-  return
+  # Default values
+  alias = null
+  name = input
+  scope = null
+  site = null
+  version = null
+  tag = null
+
+  # Check for a version
+  atIdx = name.indexOf "@", 1
+  if atIdx != -1
+    version = name.slice atIdx + 1
+    name = name.slice 0, atIdx
+
+    # An alias may follow the '@'
+    if !semver.valid(version) and !semver.validRange(version)
+      alias = name
+      name = version
+      version = null
+
+      # Check for 'npm:' or similar
+      siteIdx = name.indexOf ":", 1
+      if siteIdx != -1
+        site = name.slice 0, siteIdx
+        name = name.slice siteIdx + 1
+
+      # Check for a version (again)
+      atIdx = name.indexOf "@", 1
+      if atIdx != -1
+        version = name.slice atIdx + 1
+        name = name.slice 0, atIdx
+
+    if version == ""
+      log.warn """
+        Invalid dependency: '#{input}'
+        Version cannot be empty
+      """
+      return null
+
+  # Scoped
+  slashIdx = name.indexOf "/"
+  if slashIdx != -1
+    scope = name.slice 0, slashIdx
+
+    # Git dependency
+    if scope[0] != "@"
+      name = name.slice slashIdx + 1
+      site or= "github"
+
+      if version
+        log.warn """
+          Invalid dependency: '#{input}'
+          Must use '#' instead of '@' to specify Github tag
+        """
+        return null
+
+      tagIdx = name.indexOf "#", 1
+      if tagIdx != -1
+        tag = name.slice tagIdx + 1
+        name = name.slice 0, tagIdx
+
+        # Check for Git tags that follow semver.
+        version = tag if semver.valid tag
+
+  # The default site is npm.
+  site or= "npm"
+
+  {name, scope, site, alias, version, tag}
+
+# Parse metadata from a version string
+parseVersion = (input) ->
+
+  # Valid versions are simple.
+  if semver.valid(input) or semver.validRange(input)
+    return {name: null, scope: null, alias: null, version: input, tag: null}
+
+  # Default values
+  name = input
+  scope = null
+  site = null
+  version = null
+
+  # Check for "npm:" or similar
+  siteIdx = name.indexOf ":", 1
+  if siteIdx != -1
+    site = name.slice 0, siteIdx
+    name = name.slice siteIdx + 1
+
+  slashIdx = name.indexOf "/", 1
+  if slashIdx != -1
+    scope = name.slice 0, slashIdx
+
+    # Git dependency
+    if scope[0] != "@"
+      name = name.slice slashIdx + 1
+      site or= "github"
+
+      tagIdx = name.indexOf "#"
+      if tagIdx != -1
+        tag = name.slice tagIdx + 1
+        name = name.slice 0, tagIdx
+
+        # Check for Git tags that follow semver.
+        version = tag if semver.valid tag
+
+      return {name, scope, site, alias: null, version, tag}
+
+  # Look for version.
+  if siteIdx != -1
+    atIdx = name.indexOf "@", 2
+    if atIdx != -1
+      version = name.slice atIdx + 1
+      name = name.slice 0, atIdx
+
+  # The default site is npm.
+  else site or= "npm"
+
+  return {name, scope, site, alias: null, version, tag: null}
+
+readJson = (path) ->
+  JSON.parse fs.read path
+
+writeJson = (path, json) ->
+  fs.write path, JSON.stringify(json, null, 2) + log.ln
