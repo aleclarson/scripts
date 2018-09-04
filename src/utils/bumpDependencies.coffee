@@ -78,14 +78,14 @@ module.exports = (input, opts) ->
       if dep.version and !globalPath
         {path: globalPath, version: newVersion} = pnpmSearch dep
 
-      if !globalPath
+      if !globalPath and !opts.force
         if !newValue
           newValue = dep.name
           newValue += "@" + dep.version if dep.version
         log.warn "Global package matching '#{newValue}' not found"
         continue
 
-      # Ensure the dependency value exists.
+      # Create the dependency value for npm packges.
       if !newValue
 
         newVersion or= dep.version
@@ -97,7 +97,7 @@ module.exports = (input, opts) ->
           then dep.site + ":" + dep.name + "@" + newVersion
           else newVersion
 
-      # Update an existing symlink or create one.
+      # Remove the previous symlink.
       if fs.isLink linkPath
         fs.remove linkPath
 
@@ -106,8 +106,11 @@ module.exports = (input, opts) ->
         log.warn "Cannot overwrite non-link dependency: '#{linkPath}'"
         continue
 
-      fs.writeDir path.dirname linkPath
-      fs.writeLink linkPath, globalPath
+      # The symlink cannot be created when no global package was found.
+      # Usually, we catch this further up, but not when `opts.force` is used.
+      if globalPath
+        fs.writeDir path.dirname linkPath
+        fs.writeLink linkPath, globalPath
 
       # Apply the change if necessary.
       if newValue != oldValue

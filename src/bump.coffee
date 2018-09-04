@@ -11,8 +11,9 @@ module.exports = (args) ->
 
   if args._.length
     bumpDependencies args._,
-      all: args.A or args.all
-      dev: args.D or args.dev
+      all: Boolean args.A or args.all
+      dev: Boolean args.D or args.dev
+      force: Boolean args.f
       releaseType: (args.p and "patch") or (args.m and "minor") or (args.M and "major")
 
   else bumpCurrentPackage args
