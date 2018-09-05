@@ -247,6 +247,10 @@ parseDependency = (input) ->
         # Check for Git tags that follow semver.
         version = tag if semver.valid tag
 
+  # Ignore pointless aliases.
+  if name == alias
+    alias = null
+
   # The default site is npm.
   site or= "npm"
 
