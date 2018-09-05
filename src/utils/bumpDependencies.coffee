@@ -117,13 +117,8 @@ module.exports = (input, opts) ->
         pack[prop][name] = newValue
         if oldValue then upgradeCount++ else addCount++
 
-        displayName =
-          if dep.scope?[0] != "@"
-          then dep.scope + "/" + dep.name
-          else dep.name
-
         log.moat 1
-        log.white displayName
+        log.white dep.name
         if dep.alias
           log.gray " as "
           log.white dep.alias
