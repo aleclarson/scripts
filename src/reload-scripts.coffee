@@ -14,7 +14,7 @@ module.exports = ->
   if fs.exists cachePath
     require(cachePath).forEach (script) ->
       binPath = path.join npmBin, script
-      exec.sync "sudo rm #{binPath}"
+      try exec.sync "sudo rm #{binPath}"
     fs.removeFile cachePath
 
   log exec.sync "sudo node postinstall.js", {cwd: scriptsDir}
