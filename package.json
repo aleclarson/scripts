@@ -2,6 +2,9 @@
   "name": "scripts",
   "version": "3.3.0",
   "main": "js/index",
+  "scripts": {
+    "build": "coffee-build src -o js"
+  },
   "dependencies": {
     "@cush/git-utils": "^2.1.0",
     "assertValid": "aleclarson/assertValid#1.0.1",
@@ -16,16 +19,13 @@
     "log": "aleclarson/log#2.2.1",
     "minimist": "^1.2.0",
     "node-paths": "aleclarson/node-paths#1.0.0",
-    "semver": "5.5.0",
     "prompt": "aleclarson/prompt#2.1.0",
     "resolve": "aleclarson/resolve#1.0.0",
+    "semver": "^5.5.0",
     "sortObject": "aleclarson/sortObject#1.0.3"
   },
   "devDependencies": {
-    "coffeescript": "^2.2.3"
-  },
-  "scripts": {
-    "build": "coffee-build src -o js",
-    "prepublishOnly": "prepv -i || true"
+    "coffeescript": "^2.3.0",
+    "wch-coffee": "^0.3.0"
   }
 }
