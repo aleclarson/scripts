@@ -2,7 +2,7 @@
 semver = require "semver"
 exec = require "exec"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 module.exports = (args) ->
 

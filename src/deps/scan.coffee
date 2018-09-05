@@ -8,7 +8,7 @@ Finder = require "finder"
 OneOf = require "OneOf"
 glob = require "globby"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 config = require "../../config.json"
 ignored = OneOf config.ignore
@@ -44,7 +44,7 @@ module.exports = (args) ->
     continue if /\/node_modules\//.test file
     continue if modulePath isnt findRoot file
 
-    js = fs.read file
+    js = fs.readFile file
     deps = findRequire.all js
     for dep in deps
       continue if ~dep.indexOf "!"

@@ -5,7 +5,7 @@ prompt = require "prompt"
 path = require "path"
 exec = require "exec"
 git = require "git-utils"
-fs = require "io/sync"
+fs = require "fsx"
 
 globalSearchPaths = process.env.NODE_PATH
   .split(":").filter path.isAbsolute
@@ -42,7 +42,7 @@ module.exports = (input, opts) ->
       # Use the exact old version.
       linkPath = cwd + "/node_modules/" + name
       if oldProps and fs.exists linkPath + "/package.json"
-        oldProps.version = JSON.parse(fs.read linkPath + "/package.json").version
+        oldProps.version = JSON.parse(fs.readFile linkPath + "/package.json").version
 
       # Reset local variables.
       newValue = newVersion = globalPath = null
@@ -99,7 +99,7 @@ module.exports = (input, opts) ->
 
       # Remove the previous symlink.
       if fs.isLink linkPath
-        fs.remove linkPath
+        fs.removeFile linkPath
 
       # The user must manually delete real directories and files.
       else if fs.exists linkPath
@@ -307,7 +307,7 @@ parseVersion = (input) ->
   return {name, scope, site, alias: null, version, tag: null}
 
 readJson = (path) ->
-  JSON.parse fs.read path
+  JSON.parse fs.readFile path
 
 writeJson = (path, json) ->
-  fs.write path, JSON.stringify(json, null, 2) + log.ln
+  fs.writeFile path, JSON.stringify(json, null, 2) + log.ln

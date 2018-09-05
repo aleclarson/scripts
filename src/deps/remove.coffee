@@ -1,7 +1,7 @@
 
 hasKeys = require "hasKeys"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 module.exports = (args) ->
 
@@ -21,6 +21,7 @@ module.exports = (args) ->
   for dep in args._
     delete deps[dep]
     delete devDeps[dep]
+
     installedPath = path.resolve modulePath, "node_modules", String dep
     if fs.exists installedPath
       log.moat 1
@@ -28,7 +29,10 @@ module.exports = (args) ->
       log.white path.relative modulePath, installedPath
       log.moat 1
       log.flush()
-      fs.remove installedPath
+
+      if fs.isDir installedPath
+      then fs.removeDir installedPath
+      else fs.removeFile installedPath
 
   unless hasKeys deps
     delete json.dependencies
@@ -37,5 +41,5 @@ module.exports = (args) ->
     delete json.devDependencies
 
   json = JSON.stringify json, null, 2
-  fs.write jsonPath, json + log.ln
+  fs.writeFile jsonPath, json + log.ln
   return

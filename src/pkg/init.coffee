@@ -1,7 +1,7 @@
 
 mergeDefaults = require "mergeDefaults"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 stabilityLevels =
   experimental: "![experimental](https://img.shields.io/badge/stability-experimental-EC5315.svg?style=flat)"
@@ -85,17 +85,17 @@ module.exports = (args) ->
 
   jsonPath = path.join modulePath, "package.json"
   jsonString = JSON.stringify json, null, 2
-  fs.write jsonPath, jsonString + log.ln
+  fs.writeFile jsonPath, jsonString + log.ln
   log.it "Creating file: '#{jsonPath}'"
 
   ignorePath = path.join modulePath, ".gitignore"
-  fs.write ignorePath, ignoredPaths.join log.ln
+  fs.writeFile ignorePath, ignoredPaths.join log.ln
   log.it "Creating file: '#{ignorePath}'"
 
   if args.c or args.coffee
     ignorePath = path.join modulePath, ".npmignore"
     log.it "Creating file: '#{ignorePath}'"
-    fs.write ignorePath, """
+    fs.writeFile ignorePath, """
       !/js/
       /src/
       /spec/
@@ -103,11 +103,11 @@ module.exports = (args) ->
 
   licensePath = path.join modulePath, "LICENSE"
   licenseTemplatePath = path.resolve __dirname, "../../templates/LICENSE"
-  fs.write licensePath, fs.read licenseTemplatePath
+  fs.writeFile licensePath, fs.readFile licenseTemplatePath
   log.it "Creating file: '#{licensePath}'"
 
   readmePath = path.join modulePath, "README.md"
-  fs.write readmePath, "\n# #{json.name} v#{json.version} #{stabilityLevel}\n"
+  fs.writeFile readmePath, "\n# #{json.name} v#{json.version} #{stabilityLevel}\n"
   log.it "Creating file: '#{readmePath}'"
   return
 

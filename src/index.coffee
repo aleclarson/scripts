@@ -4,7 +4,7 @@ require "../env"
 minimist = require "minimist"
 isType = require "isType"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 module.exports = (script, args = []) ->
 

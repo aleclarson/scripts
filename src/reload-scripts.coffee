@@ -1,7 +1,7 @@
 
 path = require "path"
 exec = require "exec"
-fs = require "io/sync"
+fs = require "fsx"
 
 scriptsDir = path.dirname __dirname
 npmBin = exec.sync "sudo npm bin -g"
@@ -14,6 +14,6 @@ module.exports = ->
     require(cachePath).forEach (script) ->
       binPath = path.join npmBin, script
       exec.sync "sudo rm #{binPath}"
-    fs.remove cachePath
+    fs.removeFile cachePath
 
   log exec.sync "sudo node postinstall.js", {cwd: scriptsDir}

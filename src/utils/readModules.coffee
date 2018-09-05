@@ -2,7 +2,7 @@
 emptyFunction = require "emptyFunction"
 assertType = require "assertType"
 path = require "path"
-fs = require "io/sync"
+fs = require "fsx"
 
 readModules = (root, filter = emptyFunction.thatReturnsTrue) ->
   assertType root, String

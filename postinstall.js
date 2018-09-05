@@ -4,10 +4,10 @@ require('./env');
 var OneOf = require ('OneOf');
 var exec = require('exec');
 var path = require('path');
-var fs = require('io/sync');
+var fs = require('fsx');
 
 var npmBin = exec.sync('npm bin -g');
-var binTemplate = fs.read('templates/bin.js');
+var binTemplate = fs.readFile('templates/bin.js');
 
 // These files are not scripts.
 var ignoredFiles = OneOf('index.js map utils');
@@ -29,7 +29,7 @@ if (fs.exists('./scripts.json')) {
 // 3. Update scripts.json with the new scripts.
 var scriptNames = Object.keys(scriptsInstalled);
 if (scriptNames.length) {
-  fs.write('./scripts.json', JSON.stringify(scriptNames));
+  fs.writeFile('./scripts.json', JSON.stringify(scriptNames));
 }
 
 function installScript(script) {
@@ -58,8 +58,8 @@ function installScript(script) {
     .replace('{{isDir}}', isDir);
 
   try {
-    fs.write(binPath, binScript);
-    fs.setMode(binPath, '755');
+    fs.writeFile(binPath, binScript);
+    fs.chmod(binPath, '755');
   } catch (error) {
     log.moat(1);
     log.red(error.stack);

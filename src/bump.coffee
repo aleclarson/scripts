@@ -2,7 +2,7 @@
 semver = require "semver"
 path = require "path"
 git = require "git-utils"
-fs = require "io/sync"
+fs = require "fsx"
 
 bumpDependencies = require "./utils/bumpDependencies"
 pushBranch = require "./utils/pushBranch"
@@ -39,12 +39,12 @@ bumpCurrentPackage = (args) ->
   .then (wasClean) ->
 
     readmePath = path.join modulePath, "README.md"
-    readme = fs.read readmePath
-    fs.write readmePath, readme.replace "v#{json.version}", "v#{version}"
+    readme = fs.readFile readmePath
+    fs.writeFile readmePath, readme.replace "v#{json.version}", "v#{version}"
 
     json.version = version
     json = JSON.stringify json, null, 2
-    fs.write jsonPath, json + log.ln
+    fs.writeFile jsonPath, json + log.ln
 
     return unless wasClean
     git.stageFiles modulePath, "*"

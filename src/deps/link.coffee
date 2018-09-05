@@ -5,7 +5,7 @@ isType = require "isType"
 path = require "path"
 exec = require "exec"
 sync = require "sync"
-fs = require "io/sync"
+fs = require "fsx"
 
 npmBin = exec.sync "npm bin -g"
 npmRoot = exec.sync "npm root -g"
@@ -35,7 +35,7 @@ createLink = (linkPath, targetPath, args) ->
 
   if fs.exists linkPath
     if args.f
-      fs.remove linkPath
+      fs.removeFile linkPath
     else
       log.warn "'linkPath' already exists:\n  #{linkPath}"
       return
@@ -96,7 +96,7 @@ createGlobalLink = (modulePath, args) ->
     """
     log.moat 1
     fs.writeLink binPath, scriptPath
-    fs.setMode binPath, "755"
+    fs.chmod binPath, "755"
   return
 
 createLocalLinks = (modulePath, args) ->
@@ -125,12 +125,13 @@ createLocalLinks = (modulePath, args) ->
         log.warn "Global dependency does not exist: #{green globalPath}"
       continue
 
-    if fs.exists linkPath
-      continue unless fs.isLink linkPath
-      continue unless fs.isLinkBroken linkPath
-      fs.remove linkPath
-      log.moat 1
-      log.white "Removing broken symlink: #{red name}"
-      log.moat 1
+    if fs.isLink linkPath
+      try fs.stat linkPath
+      catch err
+        if err.code == "ENOENT"
+          fs.removeFile linkPath
+          log.moat 1
+          log.white "Removing broken symlink: #{red name}"
+          log.moat 1
 
     createLink linkPath, globalPath, args
