@@ -1,5 +1,5 @@
 
-AsyncTaskGroup = require "AsyncTaskGroup"
+AsyncTaskGroup = require "async-task-group"
 git = require "git-utils"
 
 getInverseDependencies = require "../utils/getInverseDependencies"
@@ -22,8 +22,7 @@ module.exports = (args) ->
 
   tasks = new AsyncTaskGroup 20, (name) ->
     {file, json} = mods[name]
-    isClean = await git.isClean file
-    unless isClean
+    if !await git.isClean file
       dirty[name] = {file, json}
       return
 

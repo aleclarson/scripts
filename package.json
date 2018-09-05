@@ -3,10 +3,10 @@
   "version": "3.3.0",
   "main": "js/index",
   "dependencies": {
-    "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.1.0",
     "LazyVar": "aleclarson/LazyVar#2.2.1",
     "Promise": "aleclarson/Promise#2.2.5",
     "assertValid": "aleclarson/assertValid#1.0.1",
+    "async-task-group": "^1.2.2",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
     "exec": "aleclarson/exec#1.0.3",
     "finder": "aleclarson/finder#2.0.5",
