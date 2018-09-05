@@ -4,8 +4,6 @@
   "main": "js/index",
   "dependencies": {
     "@cush/git-utils": "^2.1.0",
-    "LazyVar": "aleclarson/LazyVar#2.2.1",
-    "Promise": "aleclarson/Promise#2.2.5",
     "assertValid": "aleclarson/assertValid#1.0.1",
     "async-task-group": "^1.2.2",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",

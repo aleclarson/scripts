@@ -5,6 +5,7 @@ prompt = require "prompt"
 path = require "path"
 exec = require "exec"
 git = require "git-utils"
+log = require "log"
 fs = require "fsx"
 
 globalSearchPaths = process.env.NODE_PATH

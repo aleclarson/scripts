@@ -1,6 +1,7 @@
 
 hasKeys = require "hasKeys"
 path = require "path"
+log = require "log"
 fs = require "fsx"
 
 module.exports = (args) ->

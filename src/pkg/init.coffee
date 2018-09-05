@@ -1,5 +1,6 @@
 
 path = require "path"
+log = require "log"
 fs = require "fsx"
 
 stabilityLevels =

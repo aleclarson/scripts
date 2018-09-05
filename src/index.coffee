@@ -1,9 +1,8 @@
 
-require "../env"
-
 minimist = require "minimist"
 isValid = require "isValid"
 path = require "path"
+log = require "log"
 fs = require "fsx"
 
 module.exports = (script, args = []) ->
@@ -38,7 +37,7 @@ module.exports = (script, args = []) ->
         #{scriptsInstalled.join "\n  "}
     """
 
-  Promise.try ->
+  Promise.resolve().then ->
     start = require "./" + script
 
     if typeof start == "function"
@@ -60,10 +59,10 @@ module.exports = (script, args = []) ->
 
     throw Error "Script must return a function or object: #{script}"
 
-  .fail (error) ->
+  .catch (error) ->
     log.moat 1
     log.red error.stack
     log.moat 1
     return
 
-  .then process.exit
+  .then -> process.exit()

@@ -7,6 +7,7 @@ hasKeys = require "hasKeys"
 Finder = require "finder"
 glob = require "globby"
 path = require "path"
+log = require "log"
 fs = require "fsx"
 
 config = require "../../config.json"

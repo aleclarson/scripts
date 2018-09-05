@@ -2,6 +2,7 @@
 semver = require "semver"
 exec = require "exec"
 path = require "path"
+log = require "log"
 fs = require "fsx"
 
 module.exports = (args) ->

@@ -1,6 +1,7 @@
 
 path = require "path"
 exec = require "exec"
+log = require "log"
 fs = require "fsx"
 
 scriptsDir = path.dirname __dirname

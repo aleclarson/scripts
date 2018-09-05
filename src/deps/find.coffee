@@ -2,6 +2,7 @@
 # TODO: Find which modules depend on a specific version.
 
 hasKeys = require "hasKeys"
+log = require "log"
 
 readModules = require "../utils/readModules"
 

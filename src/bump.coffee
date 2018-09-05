@@ -2,6 +2,7 @@
 semver = require "semver"
 path = require "path"
 git = require "git-utils"
+log = require "log"
 fs = require "fsx"
 
 bumpDependencies = require "./utils/bumpDependencies"

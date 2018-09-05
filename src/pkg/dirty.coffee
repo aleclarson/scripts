@@ -1,6 +1,7 @@
 
 AsyncTaskGroup = require "async-task-group"
 git = require "git-utils"
+log = require "log"
 fs = require "fsx"
 
 getInverseDependencies = require "../utils/getInverseDependencies"
