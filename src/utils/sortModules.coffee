@@ -1,9 +1,8 @@
-
-PureObject = require "PureObject"
-assertType = require "assertType"
+assertValid = require "assertValid"
 
 sortModules = (mods, sort) ->
-  assertType mods, PureObject
+  assertValid mods, "object"
+  assertValid sort, "function"
 
   sorted = []
   names = Object.keys mods

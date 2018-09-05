@@ -1,7 +1,6 @@
 
 {resolveModule} = require "resolve"
 
-isType = require "isType"
 path = require "path"
 exec = require "exec"
 sync = require "sync"
@@ -83,7 +82,10 @@ createGlobalLink = (modulePath, args) ->
   linkPath = path.join npmRoot, json.name
   createLink linkPath, modulePath, args
 
-  return unless isType json.bin, Object
+  return if !bin = json.bin
+  if typeof bin == "string"
+    bin = { [json.name]: bin }
+
   for scriptName, scriptPath of json.bin
     scriptPath = path.resolve modulePath, scriptPath
     binPath = path.join npmBin, scriptName
@@ -106,7 +108,7 @@ createLocalLinks = (modulePath, args) ->
 
   json = require jsonPath
   deps = json.dependencies
-  return unless isType deps, Object
+  return if !deps
 
   gitRegex = /[^\/]+\/[^\#]+(\#.+)?/g
 

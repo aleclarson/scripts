@@ -1,16 +1,22 @@
-
-PureObject = require "PureObject"
-assertType = require "assertType"
-isType = require "isType"
+assertValid = require "assertValid"
+isValid = require "isValid"
 
 module.exports = (mods) ->
-  assertType mods, Object.or PureObject
+  assertValid mods, "object"
+
   inverse = Object.create null
   for name, {json} of mods
-    inverse[name] ?= []
-    continue unless isType json.dependencies, Object
-    Object.keys(json.dependencies).forEach (dep) ->
-      if inverse[dep]
-      then inverse[dep].push name
-      else inverse[dep] = [name]
+    inverse[name] or= []
+
+    deps = json.dependencies
+    if isValid deps, "object"
+      Object.keys(deps).forEach (dep) ->
+
+        if inverse[dep]
+          inverse[dep].push name
+          return
+
+        inverse[dep] = [name]
+        return
+
   return inverse

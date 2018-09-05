@@ -2,7 +2,7 @@
 require "../env"
 
 minimist = require "minimist"
-isType = require "isType"
+isValid = require "isValid"
 path = require "path"
 fs = require "fsx"
 
@@ -41,18 +41,21 @@ module.exports = (script, args = []) ->
   Promise.try ->
     start = require "./" + script
 
-    if isType start, Function
+    if typeof start == "function"
       return start args
 
-    if isType start, Object
+    if isValid start, "object"
       commands = []
       while args._.length
         commands.push command = args._.shift()
-        if isType start[command], Function
+
+        if typeof start[command] == "function"
           start = start[command]()
-          if isType start, Function
+          if typeof start == "function"
             return start args
-        break if not isType start, Object
+
+          break if !isValid start, "object"
+
       throw Error "Unrecognized command: " + commands.join " "
 
     throw Error "Script must return a function or object: #{script}"
