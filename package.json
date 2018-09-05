@@ -25,8 +25,7 @@
     "prompt": "aleclarson/prompt#2.1.0",
     "random": "aleclarson/random#1.0.4",
     "resolve": "aleclarson/resolve#1.0.0",
-    "sortObject": "aleclarson/sortObject#1.0.3",
-    "sync": "aleclarson/sync#1.0.3"
+    "sortObject": "aleclarson/sortObject#1.0.3"
   },
   "devDependencies": {
     "coffeescript": "^2.2.3"

@@ -3,7 +3,6 @@
 
 path = require "path"
 exec = require "exec"
-sync = require "sync"
 fs = require "fsx"
 
 npmBin = exec.sync "npm bin -g"
