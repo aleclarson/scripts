@@ -88,7 +88,7 @@ module.exports = (input, opts) ->
       # Create the dependency value for npm packges.
       if !newValue
 
-        newVersion or= dep.version
+        newVersion or= dep.version or "*"
         if semver.valid newVersion
           newVersion = "^" + newVersion
 
