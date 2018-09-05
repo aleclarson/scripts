@@ -5,13 +5,11 @@ emptyFunction = require "emptyFunction"
 nodePaths = require "node-paths"
 hasKeys = require "hasKeys"
 Finder = require "finder"
-OneOf = require "OneOf"
 glob = require "globby"
 path = require "path"
 fs = require "fsx"
 
 config = require "../../config.json"
-ignored = OneOf config.ignore
 
 findRequire = Finder
   regex: /(\brequire\s*?\(\s*?)(['"])([^'"]+)(\2\s*?\))/g
@@ -25,7 +23,7 @@ module.exports = (args) ->
   modulePath = path.resolve args._.shift()
   jsonPath = path.join modulePath, "package.json"
   json = require jsonPath
-  return if ignored.test json.name
+  return if config.ignore.includes json.name
 
   currentDeps = json.dependencies or {}
   devDeps = json.devDependencies or {}

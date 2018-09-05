@@ -1,6 +1,5 @@
 
 AsyncTaskGroup = require "AsyncTaskGroup"
-OneOf = require "OneOf"
 git = require "git-utils"
 
 getInverseDependencies = require "../utils/getInverseDependencies"
@@ -8,7 +7,6 @@ sortModules = require "../utils/sortModules"
 readModules = require "../utils/readModules"
 
 config = require "../../config.json"
-ignored = OneOf config.ignore
 
 module.exports = (args) ->
 
@@ -20,7 +18,7 @@ module.exports = (args) ->
   log.flush()
 
   mods = readModules process.cwd(), (file, json) ->
-    git.isRepo(file) and not ignored.test(json.name)
+    git.isRepo(file) and !config.ignore.includes(json.name)
 
   tasks = new AsyncTaskGroup 20, (name) ->
     {file, json} = mods[name]

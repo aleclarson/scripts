@@ -5,7 +5,6 @@
   "dependencies": {
     "AsyncTaskGroup": "aleclarson/AsyncTaskGroup#1.1.0",
     "LazyVar": "aleclarson/LazyVar#2.2.1",
-    "OneOf": "aleclarson/OneOf#1.1.0",
     "Promise": "aleclarson/Promise#2.2.5",
     "assertValid": "aleclarson/assertValid#1.0.1",
     "emptyFunction": "aleclarson/emptyFunction#1.0.0",
