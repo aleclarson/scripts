@@ -1,6 +1,7 @@
 
 AsyncTaskGroup = require "async-task-group"
 git = require "git-utils"
+fs = require "fsx"
 
 getInverseDependencies = require "../utils/getInverseDependencies"
 sortModules = require "../utils/sortModules"
@@ -18,7 +19,7 @@ module.exports = (args) ->
   log.flush()
 
   mods = readModules process.cwd(), (file, json) ->
-    git.isRepo(file) and !config.ignore.includes(json.name)
+    fs.exists(file + "/.git") and !config.ignore.includes(json.name)
 
   tasks = new AsyncTaskGroup 20, (name) ->
     {file, json} = mods[name]

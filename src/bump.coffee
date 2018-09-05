@@ -5,7 +5,6 @@ git = require "git-utils"
 fs = require "fsx"
 
 bumpDependencies = require "./utils/bumpDependencies"
-pushBranch = require "./utils/pushBranch"
 
 module.exports = (args) ->
 
@@ -49,4 +48,4 @@ bumpCurrentPackage = (args) ->
     return unless wasClean
     git.stageFiles modulePath, "*"
     .then -> git.commit modulePath, "Bump to v#{version}"
-    .then -> pushBranch modulePath, {force: true}
+    .then -> git.pushBranch modulePath, {force: true}
