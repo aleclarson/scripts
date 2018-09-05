@@ -1,16 +1,13 @@
-
-require('./env');
-
-var OneOf = require ('OneOf');
 var exec = require('exec');
 var path = require('path');
+var log = require('log');
 var fs = require('fsx');
 
 var npmBin = exec.sync('npm bin -g');
 var binTemplate = fs.readFile('templates/bin.js');
 
 // These files are not scripts.
-var ignoredFiles = OneOf('index.js map utils');
+var ignoredFiles = ['index.js', 'map', 'utils'];
 
 var scriptsDir = path.join(__dirname, 'js');
 var scriptsInstalled = Object.create(null);
@@ -34,7 +31,7 @@ if (scriptNames.length) {
 
 function installScript(script) {
 
-  if (ignoredFiles.test(script)) {
+  if (ignoredFiles.includes(script)) {
     return;
   }
 
