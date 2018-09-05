@@ -1,5 +1,4 @@
 
-mergeDefaults = require "mergeDefaults"
 path = require "path"
 fs = require "fsx"
 
