@@ -20,7 +20,6 @@
     "log": "aleclarson/log#2.2.1",
     "minimist": "^1.2.0",
     "node-paths": "aleclarson/node-paths#1.0.0",
-    "prompt": "aleclarson/prompt#2.1.0",
     "resolve": "aleclarson/resolve#1.0.0",
     "semver": "^5.5.0",
     "sortObject": "aleclarson/sortObject#1.0.3"
