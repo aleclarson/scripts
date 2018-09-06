@@ -48,7 +48,7 @@ module.exports = (input, opts) ->
 
         # Mark the dependency as resolved.
         newValue = "file:" + dep.name
-        globalPath = "../" + dep.name
+        localPath = "../" + dep.name
 
       # The name used to import this dependency
       name = dep.alias or dep.name
@@ -73,11 +73,13 @@ module.exports = (input, opts) ->
         newValue = dep.scope + "/" + dep.name
         newValue += "#" + dep.tag if dep.tag
 
-        # Github deps may be globally installed with `pnpm`
-        if dep.site == "github"
-          dep.tag and globalPath = searchGlobalPaths ".github.com/#{dep.scope}/#{dep.name}/" + dep.tag
+        # Github is the implicit prefix
+        if dep.site != "github"
+          newValue += dep.site + ":"
 
-        else newValue += dep.site + ":"
+        # Github deps may be globally installed with `pnpm`
+        else if dep.tag
+          localPath = searchGlobalPaths ".github.com/#{dep.scope}/#{dep.name}/" + dep.tag
 
       # Use `opts.releaseType` when a previous version exists and no version was given.
       if opts.releaseType and oldProps and !(dep.version or dep.tag)
@@ -86,24 +88,25 @@ module.exports = (input, opts) ->
           dep.version = makeSemverRange oldProps.version, opts.releaseType
 
       # Find the first global package with the desired name.
-      if !newValue and (globalPath = searchGlobalPaths dep.name + "/package.json")
+      if !newValue and (localPath = searchGlobalPaths dep.name + "/package.json")
 
         # Sanity check on global package.json
-        if !newVersion = readJson(globalPath).version
-          log.warn "Global package has no version: '#{globalPath}'"
+        if !newVersion = readJson(localPath).version
+          log.warn "Global package has no version: '#{localPath}'"
           return
 
         # The global package must satisfy the desired version.
-        globalPath =
+        localPath =
           if !dep.version or semver.satisfies newVersion, dep.version
-          then path.dirname globalPath
+          then path.dirname localPath
           else null
 
       # The `pnpm-global` folder may have the desired version.
-      if dep.version and !globalPath
-        {path: globalPath, version: newVersion} = pnpmSearch dep
+      if !localPath and dep.version
+        {path: localPath, version: newVersion} = pnpmSearch dep
 
-      if !globalPath and !opts.force
+      # The dependency must exist locally to be linked.
+      if !localPath and !opts.force
 
         if !newValue
           newValue = dep.name
@@ -135,9 +138,9 @@ module.exports = (input, opts) ->
 
       # The symlink cannot be created when no global package was found.
       # Usually, we catch this further up, but not when `opts.force` is used.
-      if globalPath
+      if localPath
         fs.writeDir path.dirname linkPath
-        fs.writeLink linkPath, globalPath
+        fs.writeLink linkPath, localPath
 
       # Apply the change if necessary.
       if newValue != oldValue
