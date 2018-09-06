@@ -68,10 +68,14 @@ module.exports = (input, opts) ->
 
       # Git deps are used as-is
       else if dep.site != "npm"
-        newValue = input[idx]
+        newValue = dep.scope + "/" + dep.name
+        newValue += "#" + dep.tag if dep.tag
 
-        # Git deps may be globally installed with `pnpm`
-        dep.tag and globalPath = searchGlobalPaths ".github.com/#{dep.scope}/#{dep.name}/" + dep.tag
+        # Github deps may be globally installed with `pnpm`
+        if dep.site == "github"
+          dep.tag and globalPath = searchGlobalPaths ".github.com/#{dep.scope}/#{dep.name}/" + dep.tag
+
+        else newValue += dep.site + ":"
 
       # Use `opts.releaseType` when a previous version exists and no version was given.
       if opts.releaseType and oldProps and !(dep.version or dep.tag)
