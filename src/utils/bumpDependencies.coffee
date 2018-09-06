@@ -28,46 +28,48 @@ module.exports = (input, opts) ->
     addCount = 0
     upgradeCount = 0
 
-    for dep, idx in deps when dep?
-      name = dep.alias or dep.name
-      oldValue = pack[prop][name]
-
-      # `opts.all` only cares about upgrading
-      continue if opts.all and !oldValue
-
-      # Parse metadata from the old value.
-      oldProps = oldValue and parseVersion oldValue
-
-      # Use the exact old version.
-      linkPath = cwd + "/node_modules/" + name
-      if oldProps and fs.exists linkPath + "/package.json"
-        oldProps.version = JSON.parse(fs.readFile linkPath + "/package.json").version
-
-      # Reset local variables.
-      newValue = newVersion = globalPath = null
+    deps.forEach (dep) ->
 
       # Handle local dependencies.
       if dep.site == "file"
 
         if opts.all
           log.warn "Local packages are not supported in all mode"
-          continue
+          return
 
         if dep.name[0] == "/"
           log.warn "Local package cannot be an absolute path: '#{dep.name}'"
-          continue
+          return
 
         # Ensure the package exists and initialize some properties.
         if !loadLocalPackage dep
           log.warn "Local package does not exist: '#{dep.name}'"
-          continue
+          return
 
         # Mark the dependency as resolved.
         newValue = "file:" + dep.name
         globalPath = "../" + dep.name
 
+      # The name used to import this dependency
+      name = dep.alias or dep.name
+
+      # Parse metadata from the previous value.
+      if oldValue = pack[prop][name]
+        oldProps = parseVersion oldValue
+
+      # `opts.all` only cares about upgrading
+      else if opts.all
+        return
+
+      # The symlink in node_modules
+      linkPath = cwd + "/node_modules/" + name
+
+      # Use the exact old version.
+      if oldProps and fs.exists linkPath + "/package.json"
+        oldProps.version = JSON.parse(fs.readFile linkPath + "/package.json").version
+
       # Git deps are used as-is
-      else if dep.site != "npm"
+      if dep.scope and dep.site != "npm"
         newValue = dep.scope + "/" + dep.name
         newValue += "#" + dep.tag if dep.tag
 
@@ -89,7 +91,7 @@ module.exports = (input, opts) ->
         # Sanity check on global package.json
         if !newVersion = readJson(globalPath).version
           log.warn "Global package has no version: '#{globalPath}'"
-          continue
+          return
 
         # The global package must satisfy the desired version.
         globalPath =
@@ -102,13 +104,15 @@ module.exports = (input, opts) ->
         {path: globalPath, version: newVersion} = pnpmSearch dep
 
       if !globalPath and !opts.force
+
         if !newValue
           newValue = dep.name
           newValue += "@" + dep.version if dep.version
-        log.warn "Global package matching '#{newValue}' not found"
-        continue
 
-      # Create the dependency value for npm packges.
+        log.warn "Global package matching '#{newValue}' not found"
+        return
+
+      # Ensure a dependency value exists for npm packages.
       if !newValue
 
         newVersion or= dep.version or "*"
@@ -127,7 +131,7 @@ module.exports = (input, opts) ->
       # The user must manually delete real directories and files.
       else if fs.exists linkPath
         log.warn "Cannot overwrite non-link dependency: '#{linkPath}'"
-        continue
+        return
 
       # The symlink cannot be created when no global package was found.
       # Usually, we catch this further up, but not when `opts.force` is used.
