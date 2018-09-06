@@ -46,8 +46,28 @@ module.exports = (input, opts) ->
       # Reset local variables.
       newValue = newVersion = globalPath = null
 
+      # Handle local dependencies.
+      if dep.site == "file"
+
+        if opts.all
+          log.warn "Local packages are not supported in all mode"
+          continue
+
+        if dep.name[0] == "/"
+          log.warn "Local package cannot be an absolute path: '#{dep.name}'"
+          continue
+
+        # Ensure the package exists and initialize some properties.
+        if !loadLocalPackage dep
+          log.warn "Local package does not exist: '#{dep.name}'"
+          continue
+
+        # Mark the dependency as resolved.
+        newValue = "file:" + dep.name
+        globalPath = "../" + dep.name
+
       # Git deps are used as-is
-      if dep.site != "npm"
+      else if dep.site != "npm"
         newValue = input[idx]
 
         # Git deps may be globally installed with `pnpm`
@@ -55,8 +75,8 @@ module.exports = (input, opts) ->
 
       # Use `opts.releaseType` when a previous version exists and no version was given.
       if opts.releaseType and oldProps and !(dep.version or dep.tag)
-        # Git tags and aliases cannot be safely bumped.
-        if !oldProps.tag and !dep.alias
+        # Aliases, git tags, and local deps cannot be bumped.
+        if !dep.alias and !oldProps.tag and oldProps.site != "file"
           dep.version = makeSemverRange oldProps.version, opts.releaseType
 
       # Find the first global package with the desired name.
@@ -143,6 +163,14 @@ module.exports = (input, opts) ->
 # Helpers
 #
 
+loadLocalPackage = (dep) ->
+  packPath = dep.name + "/package.json"
+  return false if !fs.isFile packPath
+  pack = JSON.parse fs.readFile(packPath)
+  dep.alias or= pack.name
+  dep.version = pack.version or "0.0.0"
+  return true
+
 pnpmSearch = (dep) ->
   versionDir = searchGlobalPaths ".registry.npmjs.org/" + dep.name
   if versionDir and (version = semver.maxSatisfying fs.readDir(versionDir), dep.version)
@@ -183,12 +211,18 @@ yieldPackages = (opts) ->
 parseDependency = (input) ->
 
   # Default values
-  alias = null
   name = input
   scope = null
   site = null
+  alias = null
   version = null
   tag = null
+
+  # Handle local dependencies.
+  if name.startsWith "file:"
+    site = "file"
+    name = name.slice 5
+    return {name, scope, site, alias, version, tag}
 
   # Check for a version
   atIdx = name.indexOf "@", 1
@@ -207,6 +241,10 @@ parseDependency = (input) ->
       if siteIdx != -1
         site = name.slice 0, siteIdx
         name = name.slice siteIdx + 1
+
+        # Handle local dependencies.
+        if site == "file"
+          return {name, scope, site, alias, version, tag}
 
       # Check for a version (again)
       atIdx = name.indexOf "@", 1
@@ -273,6 +311,10 @@ parseVersion = (input) ->
   if siteIdx != -1
     site = name.slice 0, siteIdx
     name = name.slice siteIdx + 1
+
+    # Handle local dependencies.
+    if site == "file"
+      return {name, scope, site, alias: null, version, tag: null}
 
   slashIdx = name.indexOf "/", 1
   if slashIdx != -1
