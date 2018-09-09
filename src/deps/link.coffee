@@ -6,6 +6,8 @@ exec = require "exec"
 log = require "log"
 fs = require "fsx"
 
+searchGlobalPaths = require "../utils/searchGlobalPaths"
+
 npmBin = exec.sync "npm bin -g"
 npmRoot = exec.sync "npm root -g"
 
@@ -27,17 +29,6 @@ module.exports = (args) ->
   return
 
 createLink = (linkPath, targetPath, args) ->
-
-  if not fs.exists targetPath
-    log.warn "'targetPath' does not exist:\n  #{targetPath}"
-    return
-
-  if fs.exists linkPath
-    if args.f
-      fs.removeFile linkPath
-    else
-      log.warn "'linkPath' already exists:\n  #{linkPath}"
-      return
 
   # Symlink all children of the linked directory.
   if args.hard
@@ -69,17 +60,32 @@ createLink = (linkPath, targetPath, args) ->
 
 createLocalLink = (modulePath, args) ->
   moduleName = path.basename modulePath
+
   linkPath = path.resolve "node_modules", moduleName
-  targetPath = path.join npmRoot, moduleName
+  if fs.exists linkPath
+    if !args.f
+      log.warn "Link path already exists: '#{green linkPath}'"
+      return
+    removePath linkPath
+
+  if !targetPath = searchGlobalPaths moduleName
+    log.warn "Global dependency does not exist: '#{green moduleName}'"
+    return
+
   createLink linkPath, targetPath, args
 
 createGlobalLink = (modulePath, args) ->
 
   jsonPath = path.join modulePath, "package.json"
-  return unless fs.isFile jsonPath
-
+  return if !fs.isFile jsonPath
   json = require jsonPath
+
   linkPath = path.join npmRoot, json.name
+  if fs.exists linkPath
+    if !args.f
+      log.warn "Link path already exists: '#{green linkPath}'"
+      return
+    removePath linkPath
   createLink linkPath, modulePath, args
 
   return if !bin = json.bin
@@ -104,7 +110,7 @@ createGlobalLink = (modulePath, args) ->
 createLocalLinks = (modulePath, args) ->
 
   jsonPath = path.join modulePath, "package.json"
-  return unless fs.isFile jsonPath
+  return if !fs.isFile jsonPath
 
   json = require jsonPath
   deps = json.dependencies
@@ -115,16 +121,11 @@ createLocalLinks = (modulePath, args) ->
   for name, version of deps
     isGit = gitRegex.test version
 
-    unless dep = resolveModule name, modulePath
-      log.warn "Cannot resolve dependency: #{green name} #{yellow version}"
-      continue
-
     linkPath = path.join modulePath, "node_modules", name
-    globalPath = path.join npmRoot, name
+    continue if fs.exists linkPath
 
-    unless fs.exists globalPath
-      unless fs.exists linkPath
-        log.warn "Global dependency does not exist: #{green globalPath}"
+    if !globalPath = searchGlobalPaths name
+      log.warn "Global dependency does not exist: #{green globalPath}"
       continue
 
     if fs.isLink linkPath
@@ -137,3 +138,8 @@ createLocalLinks = (modulePath, args) ->
           log.moat 1
 
     createLink linkPath, globalPath, args
+
+removePath = (path) ->
+  if fs.isDir path
+  then fs.removeDir path
+  else fs.removeFile path

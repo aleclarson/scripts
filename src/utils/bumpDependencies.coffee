@@ -6,8 +6,7 @@ git = require "git-utils"
 log = require "log"
 fs = require "fsx"
 
-globalSearchPaths = process.env.NODE_PATH
-  .split(":").filter path.isAbsolute
+searchGlobalPaths = require "./searchGlobalPaths"
 
 module.exports = (input, opts) ->
 
@@ -194,12 +193,6 @@ makeSemverRange = (version, releaseType) ->
     when "patch" then "~#{major}.#{minor}.#{patch + 1}"
     when "minor" then "^#{major}.#{minor + 1}"
     when "major" then String major + 1
-
-# Search NODE_PATH for a matching package
-searchGlobalPaths = (name) ->
-  for searchPath in globalSearchPaths
-    searchPath = path.join searchPath, name
-    return searchPath if fs.exists searchPath
 
 # When `opts.all` is true, all packages in the working directory are yielded.
 # Otherwise, the working directory is returned.
