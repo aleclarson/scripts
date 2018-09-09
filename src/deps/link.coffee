@@ -116,15 +116,17 @@ createLocalLinks = (modulePath, args) ->
   deps = json.dependencies
   return if !deps
 
-  gitRegex = /[^\/]+\/[^\#]+(\#.+)?/g
-
   for name, version of deps
-    isGit = gitRegex.test version
-
     linkPath = path.join modulePath, "node_modules", name
     continue if fs.exists linkPath
 
-    if !globalPath = searchGlobalPaths name
+    if version.startsWith "file:"
+      globalPath = path.resolve modulePath, version.slice 5
+      if !fs.exists globalPath
+        log.warn "Local dependency does not exist: #{green globalPath}"
+        continue
+
+    else if !globalPath = searchGlobalPaths name
       log.warn "Global dependency does not exist: #{green globalPath}"
       continue
 
