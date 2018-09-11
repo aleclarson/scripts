@@ -67,12 +67,12 @@ createLocalLink = (moduleName, args) ->
   linkPath = path.resolve "node_modules", moduleName
   if fs.exists linkPath
     if !args.f
-      log.warn "Link path already exists: '#{green linkPath}'"
+      log.warn "Link path already exists: #{green linkPath}"
       return
     removePath linkPath
 
   if !targetPath = searchGlobalPaths moduleName
-    log.warn "Global dependency does not exist: '#{green moduleName}'"
+    log.warn "Global dependency does not exist: #{green moduleName}"
     return
 
   createLink linkPath, targetPath, args
@@ -86,7 +86,7 @@ createGlobalLink = (modulePath, args) ->
   linkPath = path.join npmRoot, json.name
   if fs.exists linkPath
     if !args.f
-      log.warn "Link path already exists: '#{green linkPath}'"
+      log.warn "Link path already exists: #{green linkPath}"
       return
     removePath linkPath
   createLink linkPath, modulePath, args
