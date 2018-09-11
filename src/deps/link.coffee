@@ -15,6 +15,11 @@ npmRoot = exec.sync "npm root -g"
 
 module.exports = (args) ->
 
+  if args._.length
+    args._.forEach (moduleName) ->
+      createLocalLink moduleName, args
+    return
+
   modulePath =
     if moduleName = args._[0]
     then path.resolve moduleName
@@ -22,10 +27,9 @@ module.exports = (args) ->
 
   if args.g or args.global
     createGlobalLink modulePath, args
-  else if args._.length
-    createLocalLink modulePath, args
-  else
-    createLocalLinks modulePath, args
+    return
+
+  createLocalLinks modulePath, args
   return
 
 createLink = (linkPath, targetPath, args) ->
@@ -58,8 +62,7 @@ createLink = (linkPath, targetPath, args) ->
   fs.writeLink linkPath, targetPath
   return
 
-createLocalLink = (modulePath, args) ->
-  moduleName = path.basename modulePath
+createLocalLink = (moduleName, args) ->
 
   linkPath = path.resolve "node_modules", moduleName
   if fs.exists linkPath
