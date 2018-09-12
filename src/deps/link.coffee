@@ -116,9 +116,9 @@ createLocalLinks = (modulePath, args) ->
   return if !fs.isFile jsonPath
 
   json = require jsonPath
-  deps = json.dependencies
-  return if !deps
+  return if !json.dependencies and !json.devDependencies
 
+  deps = Object.assign {}, json.dependencies, json.devDependencies
   for name, version of deps
     linkPath = path.join modulePath, "node_modules", name
     continue if fs.exists linkPath
