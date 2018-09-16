@@ -1,4 +1,6 @@
-js/
-node_modules/
-scripts.json
-config.json
+shrinkwrap.yaml
+
+/js/
+/node_modules/
+/scripts.json
+/config.json
