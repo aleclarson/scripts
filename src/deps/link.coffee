@@ -142,7 +142,7 @@ createLocalLinks = (dir, argv) ->
         continue
 
     else if !globalPath = searchGlobalPaths name
-      log.warn "Global dependency does not exist: #{green globalPath}"
+      log.warn "Global dependency does not exist: #{green name}"
       continue
 
     if fs.isLink linkPath
