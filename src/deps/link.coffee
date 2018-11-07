@@ -123,10 +123,14 @@ createLocalLinks = (dir, argv) ->
     log.warn "Cannot find package.json"
     return
 
-  # Packages without dependencies are no-ops.
-  return if !pack.dependencies and !pack.devDependencies
+  deps = pack.dependencies
+  devDeps = pack.devDependencies if !argv.prod
+  peerDeps = pack.peerDependencies if argv.P
 
-  deps = Object.assign {}, pack.dependencies, pack.devDependencies
+  # Packages without dependencies are no-ops.
+  return if !deps and !devDeps and !peerDeps
+  deps = {...deps, ...devDeps, ...peerDeps}
+
   for name, version of deps
     linkPath = path.join dir, "node_modules", name
     continue if fs.exists linkPath
