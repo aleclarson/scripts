@@ -51,10 +51,8 @@ createLink = (linkPath, targetPath, argv) ->
 
   log.moat 1
   log.white """
-    Creating symlink..
-      #{green linkPath}
-    ..that points to:
-      #{yellow targetPath}
+    🔗 #{path.relative '.', linkPath}
+       #{green path.resolve path.dirname(linkPath), targetPath}
   """
   log.moat 1
 
@@ -136,23 +134,27 @@ createLocalLinks = (dir, argv) ->
     continue if fs.exists linkPath
 
     if version.startsWith "file:"
-      globalPath = path.resolve dir, version.slice 5
-      if !fs.exists globalPath
-        log.warn "Local dependency does not exist: #{green globalPath}"
+      targetPath = version.slice 5
+
+      if !fs.exists path.resolve(dir, targetPath)
+        log.warn "Local dependency does not exist: #{green path.resolve dir, targetPath}"
         continue
 
-    else if !globalPath = searchGlobalPaths name
+      if !path.isAbsolute targetPath
+        targetPath = path.relative path.dirname(path.join 'node_modules', name), targetPath
+
+    else if !targetPath = searchGlobalPaths name
       log.warn "Global dependency does not exist: #{green name}"
       continue
 
     if fs.isLink linkPath
       try fs.stat linkPath
       catch err
-        if err.code == "ENOENT"
-          fs.remove linkPath
-          log.moat 1
-          log.white "Removing broken symlink: #{red name}"
-          log.moat 1
+        throw err if err.code != "ENOENT"
+        fs.remove linkPath
+        log.moat 1
+        log.white "Removing broken symlink: #{red name}"
+        log.moat 1
 
-    createLink linkPath, globalPath, argv
+    createLink linkPath, targetPath, argv
   return
