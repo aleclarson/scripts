@@ -1,5 +1,6 @@
 {resolveModule} = require "resolve"
 
+os = require "os"
 path = require "path"
 exec = require "exec"
 log = require "log"
@@ -38,8 +39,8 @@ createLink = (linkPath, targetPath, argv) ->
   if argv.hard
     log.moat 1
     log.white """
-      Hard linking: #{green linkPath}
-           to path: #{yellow targetPath}
+      🔗 #{path.relative os.homedir(), linkPath}
+        #{green path.resolve path.dirname(linkPath), targetPath}
     """
     log.moat 1
     fs.mkdir linkPath
@@ -51,7 +52,7 @@ createLink = (linkPath, targetPath, argv) ->
 
   log.moat 1
   log.white """
-    🔗 #{path.relative '.', linkPath}
+    🔗 #{path.relative os.homedir(), linkPath}
        #{green path.resolve path.dirname(linkPath), targetPath}
   """
   log.moat 1
