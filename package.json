@@ -26,7 +26,7 @@
     "sortObject": "aleclarson/sortObject#1.0.3"
   },
   "devDependencies": {
-    "coffeescript": "^2.3.0",
-    "wch-coffee": "^0.3.0"
+    "coffeescript": "2.3.2",
+    "wch-coffee": "0.3.2"
   }
 }
